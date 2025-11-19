@@ -1,0 +1,22 @@
+[project]
+name = "safehome"
+version = "0.0.1"
+requires-python = ">= 3.14"
+dependencies = ["pillow>=10.0.0"]
+
+[dependency-groups]
+dev = ["pre-commit>=4.4.0"]
+
+[tool.ruff]
+select = [
+    "E", # pycodestyle errors (PEP8)
+    "F", # pyflakes - Python syntax errors and undefined names
+    "W", # pycodestyle warnings
+    "I", # isort - import sorting
+    "N", # pep8-naming - Google Style Guide naming conventions
+    "D", # pydocstyle - Google Style docstring conventions
+    "B", # flake8-bugbear - Additional bug detection
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
