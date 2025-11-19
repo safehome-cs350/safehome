@@ -5,7 +5,7 @@ requires-python = ">= 3.14"
 dependencies = ["pillow>=10.0.0", "fastapi", "uvicorn"]
 
 [dependency-groups]
-dev = ["pre-commit>=4.4.0"]
+dev = ["pre-commit>=4.4.0", "pytest", "httpx", "coverage"]
 
 [tool.ruff]
 select = [
