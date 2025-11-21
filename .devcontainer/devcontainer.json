@@ -1,0 +1,17 @@
+{
+    "name": "Safehome",
+    "build": {
+        "context": "..",
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "vscode",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "EditorConfig.EditorConfig",
+                "charliermarsh.ruff",
+                "ms-python.python"
+            ]
+        }
+    }
+}

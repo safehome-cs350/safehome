@@ -2,10 +2,15 @@
 name = "safehome"
 version = "0.0.1"
 requires-python = ">= 3.14"
-dependencies = ["pillow>=10.0.0", "fastapi", "uvicorn"]
-
-[dependency-groups]
-dev = ["pre-commit>=4.4.0", "pytest", "httpx", "coverage"]
+dependencies = [
+    "pillow>=10.0.0",
+    "fastapi",
+    "uvicorn",
+    "pre-commit>=4.4.0",
+    "pytest",
+    "httpx",
+    "coverage",
+]
 
 [tool.ruff]
 select = [
