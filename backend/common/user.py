@@ -9,7 +9,6 @@ class User:
         self.user_id = user_id
         self.password1 = password1
         self.password2 = password2
-        self.login_failed_attempts = 0
 
 
 class UserDB:
