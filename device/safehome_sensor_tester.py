@@ -1,9 +1,14 @@
+"""Sensor test."""
+
 import tkinter as tk
 from tkinter import Button, Label, messagebox
 
 
 class SafeHomeSensorTest(tk.Toplevel):
+    """SafeHomeSensorTest."""
+
     def __init__(self, master=None):
+        """Initialize SafeHomeSensorTest."""
         super().__init__(master)
         self.title("Sensor Test")
         self.geometry("355x170")
