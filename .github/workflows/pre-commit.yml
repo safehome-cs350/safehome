@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Dev Container CLI
         uses: devcontainers/ci@v0.3
-      - name: Build devcontainer
-        run: devcontainer build --workspace-folder .
+      - name: Start devcontainer
+        run: devcontainer up --workspace-folder .
       - name: Run pre-commit in devcontainer
         run: devcontainer exec --workspace-folder . pre-commit run
