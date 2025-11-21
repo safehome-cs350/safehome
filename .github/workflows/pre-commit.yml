@@ -12,5 +12,8 @@ jobs:
         uses: devcontainers/ci@v0.3
       - name: Start devcontainer
         run: devcontainer up --workspace-folder .
+      - name: Get container ID
+        id: container
+        run: echo "CONTAINER_ID=$(docker ps -q --filter name=backend)" >> $GITHUB_ENV
       - name: Run pre-commit
-        run: devcontainer exec --workspace-folder . --service backend pre-commit run
+        run: devcontainer exec --container-id ${{ env.CONTAINER_ID }} pre-commit run

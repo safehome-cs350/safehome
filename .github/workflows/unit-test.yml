@@ -12,11 +12,14 @@ jobs:
         uses: devcontainers/ci@v0.3
       - name: Start devcontainer
         run: devcontainer up --workspace-folder .
+      - name: Get container ID
+        id: container
+        run: echo "CONTAINER_ID=$(docker ps -q --filter name=backend)" >> $GITHUB_ENV
       - name: Run unit tests
         run: |
-          devcontainer exec --workspace-folder . --service backend coverage run --source=backend -m pytest -q
-          devcontainer exec --workspace-folder . --service backend coverage xml
-          devcontainer exec --workspace-folder . --service backend coverage report -m
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} coverage run --source=backend -m pytest -q
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} coverage xml
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} coverage report -m
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
