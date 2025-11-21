@@ -12,5 +12,5 @@ jobs:
         uses: devcontainers/ci@v0.3
       - name: Start devcontainer
         run: devcontainer up --workspace-folder .
-      - name: Run pre-commit in devcontainer
-        run: devcontainer exec --workspace-folder . pre-commit run
+      - name: Run pre-commit
+        run: devcontainer exec --workspace-folder . --service backend pre-commit run

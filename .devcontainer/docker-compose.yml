@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.backend
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    user: vscode
+    command: sleep infinity

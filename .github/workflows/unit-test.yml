@@ -12,12 +12,11 @@ jobs:
         uses: devcontainers/ci@v0.3
       - name: Start devcontainer
         run: devcontainer up --workspace-folder .
-      - name: Run tests in devcontainer
+      - name: Run unit tests
         run: |
-          devcontainer exec --workspace-folder . \
-            coverage run --source=backend -m pytest -q
-          devcontainer exec --workspace-folder . coverage xml
-          devcontainer exec --workspace-folder . coverage report -m
+          devcontainer exec --workspace-folder . --service backend coverage run --source=backend -m pytest -q
+          devcontainer exec --workspace-folder . --service backend coverage xml
+          devcontainer exec --workspace-folder . --service backend coverage report -m
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
