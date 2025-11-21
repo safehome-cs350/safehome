@@ -1,0 +1,19 @@
+{
+    "name": "Safehome",
+    "dockerComposeFile": [
+        "docker-compose.yml"
+    ],
+    "service": "backend",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "vscode",
+    "shutdownAction": "stopCompose",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "EditorConfig.EditorConfig",
+                "charliermarsh.ruff",
+                "ms-python.python"
+            ]
+        }
+    }
+}

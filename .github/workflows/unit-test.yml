@@ -8,15 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v2
-      - name: Sync dependencies
-        run: uv sync
-      - name: Run tests with coverage
+      - name: Install Dev Container CLI
+        uses: devcontainers/ci@v0.3
+      - name: Start devcontainer
+        run: devcontainer up --workspace-folder .
+      - name: Get container ID
+        run: echo "CONTAINER_ID=$(docker ps -q --filter name=backend)" >> $GITHUB_ENV
+      - name: Run unit tests
         run: |
-          uv run coverage run --source=backend -m pytest -q
-          uv run coverage xml
-          uv run coverage report -m
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} --workspace-folder . coverage run --source=backend -m pytest -q
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} --workspace-folder . coverage xml
+          devcontainer exec --container-id ${{ env.CONTAINER_ID }} --workspace-folder . coverage report -m
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:

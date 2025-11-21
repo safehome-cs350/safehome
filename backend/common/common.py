@@ -1,20 +1,11 @@
 """API for common use cases."""
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+
+from .request import LoginRequest
+from .user import UserDB
 
 router = APIRouter()
-
-
-class LoginRequest(BaseModel):
-    """Login Request Model."""
-
-    user_id: str
-    password1: str
-    password2: str
-
-
-users_db = {"homeowner1": {"password1": "12345678", "password2": "abcdefgh"}}
 
 
 @router.post(
@@ -35,13 +26,13 @@ users_db = {"homeowner1": {"password1": "12345678", "password2": "abcdefgh"}}
 )
 def login(login_request: LoginRequest):
     """UC1.b. Log onto the system through web browser."""
-    user = users_db.get(login_request.user_id)
+    user = UserDB.find_user_by_id(login_request.user_id)
     if not user:
         raise HTTPException(status_code=401, detail="ID not recognized")
 
     if (
-        login_request.password1 != user["password1"]
-        or login_request.password2 != user["password2"]
+        login_request.password1 != user.password1
+        or login_request.password2 != user.password2
     ):
         raise HTTPException(status_code=401, detail="Password incorrect")
 
