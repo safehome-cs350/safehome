@@ -25,3 +25,4 @@ class SafetyZone:
 
     name: str
     devices: list[Device]
+    is_armed: bool

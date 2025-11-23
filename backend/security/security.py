@@ -39,6 +39,127 @@ def reconfirm(request: ReconfirmRequest):
     return {"message": "Reconfirmed successfully"}
 
 
+@router.get(
+    "/get-safety-zones/",
+    summary="Get safety zones for a user.",
+    responses={
+        401: {
+            "description": "Invalid user ID - occurs when the user ID does not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        }
+    },
+)
+def get_safety_zones(user_id: str):
+    """Get safety zones for a user."""
+    user = UserDB.find_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+
+    return {"safety_zones": user.safety_zones}
+
+
+@router.post(
+    "/arm-safety-zone/",
+    summary="UC2.c. Arm safety zone selectively.",
+    responses={
+        400: {
+            "description": "Validation error - occurs when safety zone not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        },
+        401: {
+            "description": "Invalid user ID - occurs when the user ID does not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        },
+    },
+)
+def arm_safety_zone(request: SafetyZoneRequest):
+    """UC2.c. Arm safety zone selectively."""
+    user = UserDB.find_user_by_id(request.user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+
+    # Find the safety zone by name
+    zone_to_arm = None
+    for zone in user.safety_zones:
+        if zone.name == request.name:
+            zone_to_arm = zone
+            break
+
+    if not zone_to_arm:
+        raise HTTPException(status_code=400, detail="Safety zone not found")
+
+    # Arm the safety zone
+    zone_to_arm.is_armed = True
+
+    return {"message": "Safety zone armed successfully"}
+
+
+@router.post(
+    "/disarm-safety-zone/",
+    summary="UC2.c. Disarm safety zone selectively.",
+    responses={
+        400: {
+            "description": "Validation error - occurs when safety zone not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        },
+        401: {
+            "description": "Invalid user ID - occurs when the user ID does not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        },
+    },
+)
+def disarm_safety_zone(request: SafetyZoneRequest):
+    """UC2.c. Disarm safety zone selectively."""
+    user = UserDB.find_user_by_id(request.user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+
+    # Find the safety zone by name
+    zone_to_disarm = None
+    for zone in user.safety_zones:
+        if zone.name == request.name:
+            zone_to_disarm = zone
+            break
+
+    if not zone_to_disarm:
+        raise HTTPException(status_code=400, detail="Safety zone not found")
+
+    # Disarm the safety zone
+    zone_to_disarm.is_armed = False
+
+    return {"message": "Safety zone disarmed successfully"}
+
+
 @router.post(
     "/create-safety-zone/",
     summary="UC2.f. Create new safety zone.",
@@ -102,7 +223,7 @@ def create_safety_zone(request: SafetyZoneRequest):
         devices.append(device)
 
     # Create new safety zone
-    new_zone = SafetyZone(name=request.name, devices=devices)
+    new_zone = SafetyZone(name=request.name, devices=devices, is_armed=False)
 
     # Add to user's safety zones
     user.safety_zones.append(new_zone)

@@ -89,6 +89,191 @@ def test_reconfirm_info_mismatch():
     assert response.json()["detail"] == "Information mismatch"
 
 
+def test_get_safety_zones_success():
+    """Test successful retrieval of safety zones."""
+    client.post(
+        "/create-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Living Room",
+            "device_ids": [1, 2],
+        },
+    )
+
+    response = client.get("/get-safety-zones/", params={"user_id": "homeowner1"})
+    assert response.status_code == 200
+    data = response.json()
+    expected = {
+        "safety_zones": [
+            {
+                "name": "Living Room",
+                "devices": [
+                    {"type": "sensor", "id": 1},
+                    {"type": "sensor", "id": 2},
+                ],
+                "is_armed": False,
+            }
+        ]
+    }
+    assert data == expected
+
+
+def test_get_safety_zones_invalid_user():
+    """Test get safety zones with invalid user ID."""
+    response = client.get("/get-safety-zones/", params={"user_id": "unknown"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_arm_safety_zone_success():
+    """Test successful arming of safety zone."""
+    # First create a safety zone
+    response = client.post(
+        "/create-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Living Room",
+            "device_ids": [1, 2],
+        },
+    )
+    assert response.status_code == 200
+
+    # Arm the safety zone
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Living Room",
+            "device_ids": [],  # Ignored
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "Safety zone armed successfully"}
+
+    # Verify the safety zone is armed
+    response = client.get("/get-safety-zones/?user_id=homeowner1")
+    assert response.status_code == 200
+    safety_zones = response.json()["safety_zones"]
+    expected_safety_zones = [
+        {
+            "name": "Living Room",
+            "devices": [
+                {"type": "sensor", "id": 1},
+                {"type": "sensor", "id": 2},
+            ],
+            "is_armed": True,
+        }
+    ]
+    assert safety_zones == expected_safety_zones
+
+
+def test_disarm_safety_zone_success():
+    """Test successful disarming of safety zone."""
+    # First create and arm a safety zone
+    response = client.post(
+        "/create-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Bedroom",
+            "device_ids": [3],
+        },
+    )
+    assert response.status_code == 200
+
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Bedroom",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 200
+
+    # Disarm the safety zone
+    response = client.post(
+        "/disarm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Bedroom",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "Safety zone disarmed successfully"}
+
+    # Verify the safety zone is disarmed
+    response = client.get("/get-safety-zones/?user_id=homeowner1")
+    assert response.status_code == 200
+    safety_zones = response.json()["safety_zones"]
+    expected_safety_zones = [
+        {
+            "name": "Bedroom",
+            "devices": [
+                {"type": "camera", "id": 3},
+            ],
+            "is_armed": False,
+        }
+    ]
+    assert safety_zones == expected_safety_zones
+
+
+def test_arm_safety_zone_invalid_user():
+    """Test arming safety zone with invalid user ID."""
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "unknown",
+            "name": "Living Room",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_arm_safety_zone_not_found():
+    """Test arming non-existent safety zone."""
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Nonexistent",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Safety zone not found"
+
+
+def test_disarm_safety_zone_invalid_user():
+    """Test disarming safety zone with invalid user ID."""
+    response = client.post(
+        "/disarm-safety-zone/",
+        json={
+            "user_id": "unknown",
+            "name": "Living Room",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_disarm_safety_zone_not_found():
+    """Test disarming non-existent safety zone."""
+    response = client.post(
+        "/disarm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Nonexistent",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Safety zone not found"
+
+
 def test_create_safety_zone_success():
     """Test successful creation of safety zone."""
     response = client.post(
