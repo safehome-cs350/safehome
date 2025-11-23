@@ -1,10 +1,36 @@
-"""Tests for the app module."""
+"""Tests for the common use cases."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import app
+from backend.common.user import Device, DeviceType, User, UserDB
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_user_db():
+    """Reset UserDB to initial state before each test."""
+    UserDB.users = [
+        User(
+            user_id="homeowner1",
+            password1="12345678",
+            password2="abcdefgh",
+            master_password="1234",
+            guest_password="5678",
+            delay_time=300,
+            phone_number="01012345678",
+            is_powered_on=True,
+            address="123 Main St",
+            devices=[
+                Device(type=DeviceType.SENSOR, id=1),
+                Device(type=DeviceType.SENSOR, id=2),
+                Device(type=DeviceType.CAMERA, id=3),
+            ],
+            safety_zones=[],
+        )
+    ]
 
 
 def test_login_success():

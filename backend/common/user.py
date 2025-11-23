@@ -2,11 +2,14 @@
 
 from dataclasses import dataclass
 
+from .device import Device, DeviceType, SafetyZone
+
 
 @dataclass
 class User:
     """User class."""
 
+    # Common
     user_id: str
     password1: str
     password2: str
@@ -15,6 +18,15 @@ class User:
     delay_time: int
     phone_number: str
     is_powered_on: bool
+    address: str
+
+    # Security
+    devices: list[Device]
+    safety_zones: list[SafetyZone]
+
+    def find_device_by_id(self, device_id: int) -> Device | None:
+        """Find a device by ID."""
+        return next((d for d in self.devices if d.id == device_id), None)
 
 
 class UserDB:
@@ -30,6 +42,13 @@ class UserDB:
             delay_time=300,
             phone_number="01012345678",
             is_powered_on=True,
+            address="123 Main St",
+            devices=[
+                Device(type=DeviceType.SENSOR, id=1),
+                Device(type=DeviceType.SENSOR, id=2),
+                Device(type=DeviceType.CAMERA, id=3),
+            ],
+            safety_zones=[],
         )
     ]
 
