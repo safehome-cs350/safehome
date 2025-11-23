@@ -47,3 +47,97 @@ def test_login_wrong_password():
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Password incorrect"
+
+
+def test_config_success():
+    """Test successful config update."""
+    response = client.post(
+        "/config/",
+        json={
+            "user_id": "homeowner1",
+            "password1": "newpass1",
+            "password2": "newpass2",
+            "master_password": "newmaster",
+            "guest_password": "newguest",
+            "delay_time": 600,
+            "phone_number": "01098765432",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "Configuration updated successfully"}
+
+
+def test_config_invalid_user():
+    """Test config with invalid user ID."""
+    response = client.post(
+        "/config/",
+        json={
+            "user_id": "unknown",
+            "password1": "newpass1",
+            "password2": "newpass2",
+            "master_password": "newmaster",
+            "guest_password": "newguest",
+            "delay_time": 600,
+            "phone_number": "01098765432",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_config_delay_time_too_small():
+    """Test config with delay time less than 300."""
+    response = client.post(
+        "/config/",
+        json={
+            "user_id": "homeowner1",
+            "password1": None,
+            "password2": None,
+            "master_password": None,
+            "guest_password": None,
+            "delay_time": 200,
+            "phone_number": None,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Delay time must be at least 300"
+
+
+def test_power_on_success():
+    """Test successful power on."""
+    response = client.post(
+        "/power_on/",
+        json={"user_id": "homeowner1"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "System powered on"}
+
+
+def test_power_on_invalid_user():
+    """Test power on with invalid user ID."""
+    response = client.post(
+        "/power_on/",
+        json={"user_id": "unknown"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_power_off_success():
+    """Test successful power off."""
+    response = client.post(
+        "/power_off/",
+        json={"user_id": "homeowner1"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "System powered off"}
+
+
+def test_power_off_invalid_user():
+    """Test power off with invalid user ID."""
+    response = client.post(
+        "/power_off/",
+        json={"user_id": "unknown"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
