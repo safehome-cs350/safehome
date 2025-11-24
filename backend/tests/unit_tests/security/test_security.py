@@ -204,6 +204,34 @@ def test_arm_safety_zone_success():
     assert safety_zones == expected_safety_zones
 
 
+def test_arm_safety_zone_invalid_user():
+    """Test arming safety zone with invalid user ID."""
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "unknown",
+            "name": "Living Room",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_arm_safety_zone_not_found():
+    """Test arming non-existent safety zone."""
+    response = client.post(
+        "/arm-safety-zone/",
+        json={
+            "user_id": "homeowner1",
+            "name": "Nonexistent",
+            "device_ids": [],
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Safety zone not found"
+
+
 def test_disarm_safety_zone_success():
     """Test successful disarming of safety zone."""
     # First create and arm a safety zone
@@ -255,34 +283,6 @@ def test_disarm_safety_zone_success():
     assert safety_zones == expected_safety_zones
 
 
-def test_arm_safety_zone_invalid_user():
-    """Test arming safety zone with invalid user ID."""
-    response = client.post(
-        "/arm-safety-zone/",
-        json={
-            "user_id": "unknown",
-            "name": "Living Room",
-            "device_ids": [],
-        },
-    )
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid user ID"
-
-
-def test_arm_safety_zone_not_found():
-    """Test arming non-existent safety zone."""
-    response = client.post(
-        "/arm-safety-zone/",
-        json={
-            "user_id": "homeowner1",
-            "name": "Nonexistent",
-            "device_ids": [],
-        },
-    )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Safety zone not found"
-
-
 def test_disarm_safety_zone_invalid_user():
     """Test disarming safety zone with invalid user ID."""
     response = client.post(
@@ -323,6 +323,22 @@ def test_create_safety_zone_success():
     )
     assert response.status_code == 200
     assert response.json() == {"message": "Safety zone created successfully"}
+
+    # Check if safety zone was added via get-safety-zones
+    response = client.get("/get-safety-zones/?user_id=homeowner1")
+    assert response.status_code == 200
+    safety_zones = response.json()["safety_zones"]
+    expected_safety_zones = [
+        {
+            "name": "Living Room",
+            "devices": [
+                {"type": "sensor", "id": 1},
+                {"type": "sensor", "id": 2},
+            ],
+            "is_armed": False,
+        }
+    ]
+    assert safety_zones == expected_safety_zones
 
 
 def test_create_safety_zone_invalid_user():
@@ -432,6 +448,12 @@ def test_delete_safety_zone_success():
     assert response.status_code == 200
     assert response.json() == {"message": "Safety zone deleted successfully"}
 
+    # Check if safety zone was deleted
+    response = client.get("/get-safety-zones/?user_id=homeowner1")
+    assert response.status_code == 200
+    safety_zones = response.json()["safety_zones"]
+    assert safety_zones == []
+
 
 def test_delete_safety_zone_invalid_user():
     """Test delete safety zone with invalid user ID."""
@@ -485,6 +507,22 @@ def test_update_safety_zone_success():
     )
     assert response.status_code == 200
     assert response.json() == {"message": "Safety zone updated successfully"}
+
+    # Check if safety zone was updated
+    response = client.get("/get-safety-zones/?user_id=homeowner1")
+    assert response.status_code == 200
+    safety_zones = response.json()["safety_zones"]
+    expected_safety_zones = [
+        {
+            "name": "Test Zone",
+            "devices": [
+                {"type": "sensor", "id": 1},
+                {"type": "camera", "id": 3},
+            ],
+            "is_armed": False,
+        }
+    ]
+    assert safety_zones == expected_safety_zones
 
 
 def test_update_safety_zone_invalid_user():
