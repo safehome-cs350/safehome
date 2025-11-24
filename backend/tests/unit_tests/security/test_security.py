@@ -125,6 +125,43 @@ def test_get_safety_zones_invalid_user():
     assert response.json()["detail"] == "Invalid user ID"
 
 
+def test_arm_success():
+    """Test successful arming of all devices."""
+    response = client.post("/arm/", params={"user_id": "homeowner1"})
+    assert response.status_code == 200
+    assert response.json() == {"message": "All devices armed successfully"}
+
+    user = UserDB.find_user_by_id("homeowner1")
+    for device in user.devices:
+        assert device.is_armed is True
+
+
+def test_arm_invalid_user():
+    """Test arming with invalid user ID."""
+    response = client.post("/arm/", params={"user_id": "unknown"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_disarm_success():
+    """Test successful disarming of all devices."""
+    client.post("/arm/", params={"user_id": "homeowner1"})
+    response = client.post("/disarm/", params={"user_id": "homeowner1"})
+    assert response.status_code == 200
+    assert response.json() == {"message": "All devices disarmed successfully"}
+
+    user = UserDB.find_user_by_id("homeowner1")
+    for device in user.devices:
+        assert device.is_armed is False
+
+
+def test_disarm_invalid_user():
+    """Test disarming with invalid user ID."""
+    response = client.post("/disarm/", params={"user_id": "unknown"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid user ID"
+
+
 def test_arm_safety_zone_success():
     """Test successful arming of safety zone."""
     # First create a safety zone

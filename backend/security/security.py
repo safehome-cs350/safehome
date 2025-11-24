@@ -65,6 +65,62 @@ def get_safety_zones(user_id: str):
 
 
 @router.post(
+    "/arm/",
+    summary="UC2.a/b. Arm system.",
+    responses={
+        401: {
+            "description": "Invalid user ID - occurs when the user ID does not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        }
+    },
+)
+def arm(user_id: str):
+    """UC2.a/b. Arm system."""
+    user = UserDB.find_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+
+    for device in user.devices:
+        device.is_armed = True
+
+    return {"message": "All devices armed successfully"}
+
+
+@router.post(
+    "/disarm/",
+    summary="UC2.a/b. Disarm system.",
+    responses={
+        401: {
+            "description": "Invalid user ID - occurs when the user ID does not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        }
+    },
+)
+def disarm(user_id: str):
+    """UC2.a/b. Disarm system."""
+    user = UserDB.find_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+
+    for device in user.devices:
+        device.is_armed = False
+
+    return {"message": "All devices disarmed successfully"}
+
+
+@router.post(
     "/arm-safety-zone/",
     summary="UC2.c. Arm safety zone selectively.",
     responses={
