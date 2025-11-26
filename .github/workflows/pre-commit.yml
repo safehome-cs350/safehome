@@ -8,9 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install Dev Container CLI
         uses: devcontainers/ci@v0.3
       - name: Start devcontainer
         run: devcontainer up --workspace-folder .
       - name: Run pre-commit
-        run: devcontainer exec --workspace-folder . pre-commit run
+        run: devcontainer exec --workspace-folder . pre-commit run --from-ref=origin/${{ github.base_ref }} --to-ref=HEAD
