@@ -29,30 +29,6 @@ class MainDashboard(ttk.Frame):
         nav_frame = ttk.Frame(menu_frame)
         nav_frame.pack(side=tk.LEFT, padx=20)
 
-        self.security_btn = ttk.Button(
-            nav_frame,
-            text="Security",
-            command=lambda: self.show_panel("security"),
-            width=15,
-        )
-        self.security_btn.pack(side=tk.LEFT, padx=5)
-
-        self.surveillance_btn = ttk.Button(
-            nav_frame,
-            text="Surveillance",
-            command=lambda: self.show_panel("surveillance"),
-            width=15,
-        )
-        self.surveillance_btn.pack(side=tk.LEFT, padx=5)
-
-        self.config_btn = ttk.Button(
-            nav_frame,
-            text="Configuration",
-            command=lambda: self.show_panel("configuration"),
-            width=15,
-        )
-        self.config_btn.pack(side=tk.LEFT, padx=5)
-
         user_frame = ttk.Frame(menu_frame)
         user_frame.pack(side=tk.RIGHT, padx=10)
 
