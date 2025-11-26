@@ -1,12 +1,10 @@
 {
     "name": "Safehome",
-    "dockerComposeFile": [
-        "docker-compose.yml"
-    ],
-    "service": "backend",
-    "workspaceFolder": "/workspace",
+    "build": {
+        "context": "..",
+        "dockerfile": "Dockerfile"
+    },
     "remoteUser": "vscode",
-    "shutdownAction": "stopCompose",
     "customizations": {
         "vscode": {
             "extensions": [
