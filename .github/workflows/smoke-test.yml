@@ -1,0 +1,27 @@
+name: smoke-test
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  backend-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t backend-smoke-test -f backend/Dockerfile .
+      - name: Run Docker container
+        run: |
+          docker run -d --rm -p 8000:8000 --name smoke-test backend-smoke-test
+          sleep 5
+      - name: Check /docs
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/docs)
+          echo "Status code: $STATUS_CODE"
+          if [ "$STATUS_CODE" -ne 200 ]; then
+            echo "/docs endpoint failed"
+            exit 1
+          fi
+      - name: Stop Docker container
+        if: always()
+        run: docker stop smoke-test
