@@ -1,10 +1,36 @@
-"""Tests for the app module."""
+"""Tests for the common use cases."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import app
+from backend.common.user import Device, DeviceType, User, UserDB
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_user_db():
+    """Reset UserDB to initial state before each test."""
+    UserDB.users = [
+        User(
+            user_id="homeowner1",
+            password1="12345678",
+            password2="abcdefgh",
+            master_password="1234",
+            guest_password="5678",
+            delay_time=300,
+            phone_number="01012345678",
+            is_powered_on=True,
+            address="123 Main St",
+            devices=[
+                Device(type=DeviceType.SENSOR, id=1),
+                Device(type=DeviceType.SENSOR, id=2),
+                Device(type=DeviceType.CAMERA, id=3),
+            ],
+            safety_zones=[],
+        )
+    ]
 
 
 def test_login_success():
@@ -65,6 +91,13 @@ def test_config_success():
     )
     assert response.status_code == 200
     assert response.json() == {"message": "Configuration updated successfully"}
+    # Check if actual values have changed
+    assert UserDB.users[0].password1 == "newpass1"
+    assert UserDB.users[0].password2 == "newpass2"
+    assert UserDB.users[0].master_password == "newmaster"
+    assert UserDB.users[0].guest_password == "newguest"
+    assert UserDB.users[0].delay_time == 600
+    assert UserDB.users[0].phone_number == "01098765432"
 
 
 def test_config_invalid_user():
@@ -106,17 +139,19 @@ def test_config_delay_time_too_small():
 def test_power_on_success():
     """Test successful power on."""
     response = client.post(
-        "/power_on/",
+        "/power-on/",
         json={"user_id": "homeowner1"},
     )
     assert response.status_code == 200
     assert response.json() == {"message": "System powered on"}
+    # Check if actual value has changed
+    assert UserDB.users[0].is_powered_on is True
 
 
 def test_power_on_invalid_user():
     """Test power on with invalid user ID."""
     response = client.post(
-        "/power_on/",
+        "/power-on/",
         json={"user_id": "unknown"},
     )
     assert response.status_code == 401
@@ -126,17 +161,19 @@ def test_power_on_invalid_user():
 def test_power_off_success():
     """Test successful power off."""
     response = client.post(
-        "/power_off/",
+        "/power-off/",
         json={"user_id": "homeowner1"},
     )
     assert response.status_code == 200
     assert response.json() == {"message": "System powered off"}
+    # Check if actual value has changed
+    assert UserDB.users[0].is_powered_on is False
 
 
 def test_power_off_invalid_user():
     """Test power off with invalid user ID."""
     response = client.post(
-        "/power_off/",
+        "/power-off/",
         json={"user_id": "unknown"},
     )
     assert response.status_code == 401

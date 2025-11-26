@@ -89,7 +89,7 @@ def config(request: ConfigRequest):
 
 
 @router.post(
-    "/power_on/",
+    "/power-on/",
     summary="UC1.d. Turn the system on.",
     responses={
         401: {
@@ -115,7 +115,7 @@ def power_on(request: PowerRequest):
 
 
 @router.post(
-    "/power_off/",
+    "/power-off/",
     summary="UC1.e. Turn the system off.",
     responses={
         401: {
