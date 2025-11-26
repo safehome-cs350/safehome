@@ -4,6 +4,8 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
+    python3-tk \
+    xvfb \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
@@ -11,6 +13,8 @@ WORKDIR /workspace
 COPY pyproject.toml ./
 
 RUN pip install --no-cache-dir -e .
+
+COPY . .
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
