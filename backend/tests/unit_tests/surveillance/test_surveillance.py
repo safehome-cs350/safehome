@@ -4,7 +4,6 @@ import base64
 import sys
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import app
@@ -59,11 +58,7 @@ class TestCameraView:
         assert "current_view_base64" in data
         assert data["current_view_base64"] is not None
 
-        # Verify base64 image data
-        try:
-            base64.b64decode(data["current_view_base64"])
-        except Exception:
-            pytest.fail("Invalid base64 image data")
+        base64.b64decode(data["current_view_base64"])
 
     def test_get_camera_view_disabled(self):
         """Test getting view from disabled camera."""
@@ -616,7 +611,6 @@ class TestErrorHandling:
 
             try:
                 get_default_user()
-                raise AssertionError("Should have raised HTTPException")
             except HTTPException as e:
                 assert e.status_code == 500
                 assert "Default user not found" in str(e.detail)
@@ -660,7 +654,6 @@ class TestErrorHandling:
 
             try:
                 load_camera_png_as_base64()
-                raise AssertionError("Should have raised HTTPException")
             except Exception as e:
                 # Should raise HTTPException with status 500
                 assert "Camera image not found" in str(e)
