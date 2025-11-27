@@ -56,5 +56,3 @@ class UserDB:
     def find_user_by_id(cls, user_id: str) -> User | None:
         """Find a user by ID."""
         return next((u for u in cls.users if u.user_id == user_id), None)
-
-    

@@ -3,8 +3,8 @@
 from fastapi import FastAPI
 
 from .common import router as common_router
-from .surveillance.surveillance import router as surveillance_router
 from .security import router as security_router
+from .surveillance.surveillance import router as surveillance_router
 
 app = FastAPI(title="SafeHome API", version="1.0")
 

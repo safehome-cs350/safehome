@@ -1,17 +1,19 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
+"""Surveillance module for handling camera and sensor operations."""
+
 import base64
-import io
-import threading
 import os
 import sys
+import threading
+from typing import List, Optional
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
-from device.device_camera import DeviceCamera
-from backend.common.user import UserDB
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+
 from backend.common.device import CameraDB, SensorDB
+from backend.common.user import UserDB
+from device.device_camera import DeviceCamera
 
 router = APIRouter(
     prefix="/surveillance",
@@ -20,6 +22,8 @@ router = APIRouter(
 
 
 class CameraViewResponse(BaseModel):
+    """Response model for camera view data."""
+
     camera_id: int
     name: str
     is_enabled: bool
@@ -30,65 +34,97 @@ class CameraViewResponse(BaseModel):
     zoom_level: int = 2
     current_time: int = 0
 
+
 class PTZCommand(BaseModel):
+    """Command model for PTZ operations."""
+
     pan: Optional[int] = None
     zoom: Optional[int] = None
-    
+
+
 class PTZResponse(BaseModel):
+    """Response model for PTZ operations."""
+
     camera_id: int
     pan_position: int
     zoom_level: int
     success: bool
     message: str
 
+
 class CameraPasswordRequest(BaseModel):
+    """Request model for camera password operations."""
+
     password: str
 
+
 class SensorStatus(BaseModel):
+    """Model for sensor status information."""
+
     sensor_id: int
     sensor_type: str
     is_armed: bool
     is_triggered: bool
     location: str
 
+
 class SensorListResponse(BaseModel):
+    """Response model for sensor list."""
+
     sensors: List[SensorStatus]
 
+
 class CameraPasswordStatus(BaseModel):
+    """Response model for camera password status."""
+
     camera_id: int
     has_password: bool
 
+
 class ThumbnailShot(BaseModel):
+    """Model for camera thumbnail information."""
+
     id: int
     camera_id: int
     captured_at: str
     image_url: str
 
+
 class CameraStateResponse(BaseModel):
+    """Response model for camera state."""
+
     camera_id: int
     is_enabled: bool
+
 
 camera_instances = {}
 camera_instances_lock = threading.Lock()
 
+
 def get_or_create_camera(camera_id: int) -> DeviceCamera:
+    """Get or create a camera instance."""
     with camera_instances_lock:
         if camera_id not in camera_instances:
             camera_instances[camera_id] = DeviceCamera()
             camera_instances[camera_id].set_id(camera_id)
         return camera_instances[camera_id]
 
+
 def load_camera_png_as_base64() -> str:
-    camera_png_path = os.path.join(os.path.dirname(__file__), '../../img/camera.png')
+    """Load camera image and return as base64 string."""
+    camera_png_path = os.path.join(os.path.dirname(__file__), "../../img/camera.png")
     try:
-        with open(camera_png_path, 'rb') as image_file:
+        with open(camera_png_path, "rb") as image_file:
             img_str = base64.b64encode(image_file.read()).decode()
             return img_str
     except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Camera image not found")
+        raise HTTPException(status_code=500, detail="Camera image not found") from None
 
-# Default user for demo purposes - in real implementation this would come from authentication
+
+# Default user for demo purposes - in real implementation this would come
+# from authentication
 DEFAULT_USER_ID = "homeowner1"
+
 
 def get_default_user():
     """Get the default user for demo purposes."""
@@ -97,6 +133,7 @@ def get_default_user():
         raise HTTPException(status_code=500, detail="Default user not found")
     return user
 
+
 def get_camera_info(camera_id: int):
     """Get camera info from CameraDB."""
     camera = CameraDB.get_camera(camera_id)
@@ -104,11 +141,15 @@ def get_camera_info(camera_id: int):
         raise HTTPException(status_code=404, detail="Camera not found")
     return camera
 
+
 def validate_camera_exists(camera_id: int) -> None:
     """Validate that camera exists."""
     get_camera_info(camera_id)
 
+
 class CameraListItem(BaseModel):
+    """Model for camera list item."""
+
     camera_id: int
     name: str
     location: str
@@ -116,11 +157,15 @@ class CameraListItem(BaseModel):
     is_online: bool
     has_password: bool
 
+
 class CameraListResponse(BaseModel):
+    """Response model for camera list."""
+
     cameras: List[CameraListItem]
 
+
 @router.get(
-    "/cameras", 
+    "/cameras",
     response_model=CameraListResponse,
     summary="UC1.a. List all cameras",
     responses={
@@ -136,49 +181,48 @@ class CameraListResponse(BaseModel):
                                 "location": "거실",
                                 "is_enabled": True,
                                 "is_online": True,
-                                "has_password": False
+                                "has_password": False,
                             }
                         ]
                     }
                 }
-            }
+            },
         },
         500: {
             "description": "Internal server error",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Internal server error"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Internal server error"}}
+            },
+        },
+    },
 )
 async def list_cameras():
+    """List all available cameras."""
     cameras = []
-    
+
     for camera_info in CameraDB.get_all_cameras():
         try:
-            device_camera = get_or_create_camera(camera_info.camera_id)
-            is_online = True 
+            get_or_create_camera(camera_info.camera_id)
+            is_online = True
         except Exception:
             is_online = False
-        
-        cameras.append(CameraListItem(
-            camera_id=camera_info.camera_id,
-            name=camera_info.name,
-            location=camera_info.location,
-            is_enabled=camera_info.is_enabled,
-            is_online=is_online,
-            has_password=camera_info.has_password,
-        ))
-    
+
+        cameras.append(
+            CameraListItem(
+                camera_id=camera_info.camera_id,
+                name=camera_info.name,
+                location=camera_info.location,
+                is_enabled=camera_info.is_enabled,
+                is_online=is_online,
+                has_password=camera_info.has_password,
+            )
+        )
+
     return CameraListResponse(cameras=cameras)
 
 
 @router.get(
-    "/cameras/{camera_id}/view", 
+    "/cameras/{camera_id}/view",
     response_model=CameraViewResponse,
     summary="UC1.b. Display camera view",
     responses={
@@ -192,47 +236,41 @@ async def list_cameras():
                         "is_enabled": True,
                         "is_online": True,
                         "stream_url": "https://example.com/stream/cam1.m3u8",
-                        "current_view_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+                        "current_view_base64": (
+                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+                            "AAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+                        ),
                         "pan_position": 0,
                         "zoom_level": 2,
-                        "current_time": 0
+                        "current_time": 0,
                     }
                 }
-            }
+            },
         },
         400: {
             "description": "Camera is disabled",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera is disabled"
-                    }
-                }
-            }
+                "application/json": {"example": {"detail": "Camera is disabled"}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
         },
         500: {
             "description": "Failed to get camera view",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "Failed to get camera view: error message"
-                    }
+                    "example": {"detail": "Failed to get camera view: error message"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def display_camera_view(camera_id: int):
+    """Display camera view with current settings."""
     camera = get_camera_info(camera_id)
 
     if not camera.is_enabled:
@@ -241,25 +279,26 @@ async def display_camera_view(camera_id: int):
     try:
         device_camera = get_or_create_camera(camera_id)
         view_base64 = load_camera_png_as_base64()
-        
+
         return CameraViewResponse(
             camera_id=camera_id,
             name=camera.name,
             is_enabled=camera.is_enabled,
             is_online=camera.is_online,
-            stream_url=f"https://example.com/stream/cam{camera_id}.m3u8", 
+            stream_url=f"https://example.com/stream/cam{camera_id}.m3u8",
             current_view_base64=view_base64,
             pan_position=device_camera.pan,
             zoom_level=device_camera.zoom,
             current_time=device_camera.time,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get camera view: {str(e)}")
-
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get camera view: {str(e)}"
+        ) from e
 
 
 @router.post(
-    "/cameras/{camera_id}/ptz", 
+    "/cameras/{camera_id}/ptz",
     response_model=PTZResponse,
     summary="UC1.c. Control camera PTZ (Pan-Tilt-Zoom)",
     responses={
@@ -272,44 +311,35 @@ async def display_camera_view(camera_id: int):
                         "pan_position": 2,
                         "zoom_level": 3,
                         "success": True,
-                        "message": "PTZ command completed successfully"
+                        "message": "PTZ command completed successfully",
                     }
                 }
-            }
+            },
         },
         400: {
             "description": "Camera is disabled",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera is disabled"
-                    }
-                }
-            }
+                "application/json": {"example": {"detail": "Camera is disabled"}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
         },
         500: {
             "description": "PTZ control failed",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "PTZ control failed: error message"
-                    }
+                    "example": {"detail": "PTZ control failed: error message"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
+    """Control camera PTZ (Pan-Tilt-Zoom) operations."""
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -325,7 +355,7 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
         if cmd.pan is not None:
             current_pan = device_camera.pan
             target_pan = cmd.pan
-            
+
             while current_pan != target_pan and success:
                 if current_pan < target_pan:
                     success = device_camera.pan_right()
@@ -333,14 +363,14 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
                 elif current_pan > target_pan:
                     success = device_camera.pan_left()
                     current_pan = device_camera.pan
-                    
+
             if not success:
                 messages.append(f"Pan limit reached at {current_pan}")
 
         if cmd.zoom is not None:
             current_zoom = device_camera.zoom
             target_zoom = cmd.zoom
-            
+
             while current_zoom != target_zoom and success:
                 if current_zoom < target_zoom:
                     success = device_camera.zoom_in()
@@ -348,12 +378,14 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
                 elif current_zoom > target_zoom:
                     success = device_camera.zoom_out()
                     current_zoom = device_camera.zoom
-                    
+
             if not success:
                 messages.append(f"Zoom limit reached at {current_zoom}")
 
-        message = "; ".join(messages) if messages else "PTZ command completed successfully"
-        
+        message = (
+            "; ".join(messages) if messages else "PTZ command completed successfully"
+        )
+
         return PTZResponse(
             camera_id=camera_id,
             pan_position=device_camera.pan,
@@ -361,40 +393,34 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
             success=success,
             message=message,
         )
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PTZ control failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"PTZ control failed: {str(e)}"
+        ) from e
 
 
 @router.put(
-    "/cameras/{camera_id}/password", 
+    "/cameras/{camera_id}/password",
     response_model=CameraPasswordStatus,
     summary="UC1.d. Set camera password",
     responses={
         200: {
             "description": "Successfully set camera password",
             "content": {
-                "application/json": {
-                    "example": {
-                        "camera_id": 1,
-                        "has_password": True
-                    }
-                }
-            }
+                "application/json": {"example": {"camera_id": 1, "has_password": True}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
+        },
+    },
 )
 async def set_camera_password(camera_id: int, req: CameraPasswordRequest):
+    """Set password for a camera."""
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -404,34 +430,26 @@ async def set_camera_password(camera_id: int, req: CameraPasswordRequest):
 
 
 @router.delete(
-    "/cameras/{camera_id}/password", 
+    "/cameras/{camera_id}/password",
     response_model=CameraPasswordStatus,
     summary="UC1.e. Delete camera password",
     responses={
         200: {
             "description": "Successfully deleted camera password",
             "content": {
-                "application/json": {
-                    "example": {
-                        "camera_id": 1,
-                        "has_password": False
-                    }
-                }
-            }
+                "application/json": {"example": {"camera_id": 1, "has_password": False}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
+        },
+    },
 )
 async def delete_camera_password(camera_id: int):
+    """Delete password for a camera."""
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -441,7 +459,7 @@ async def delete_camera_password(camera_id: int):
 
 
 @router.get(
-    "/cameras/{camera_id}/thumbnails", 
+    "/cameras/{camera_id}/thumbnails",
     response_model=List[ThumbnailShot],
     summary="UC1.f. Get camera thumbnail history",
     responses={
@@ -454,27 +472,24 @@ async def delete_camera_password(camera_id: int):
                             "id": 101,
                             "camera_id": 1,
                             "captured_at": "2025-11-19T10:00:00Z",
-                            "image_url": "https://example.com/thumbs/1_1.jpg"
+                            "image_url": "https://example.com/thumbs/1_1.jpg",
                         }
                     ]
                 }
-            }
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
+        },
+    },
 )
 async def list_thumbnails(camera_id: int):
+    """List camera thumbnail history."""
     validate_camera_exists(camera_id)
-    
+
     fake_thumbnails = [
         ThumbnailShot(
             id=100 + camera_id,
@@ -489,86 +504,70 @@ async def list_thumbnails(camera_id: int):
             image_url=f"https://example.com/thumbs/{camera_id}_2.jpg",
         ),
     ]
-    
+
     return fake_thumbnails
 
 
 @router.post(
-    "/cameras/{camera_id}/enable", 
+    "/cameras/{camera_id}/enable",
     response_model=CameraStateResponse,
     summary="UC1.g. Enable camera",
     responses={
         200: {
             "description": "Successfully enabled camera",
             "content": {
-                "application/json": {
-                    "example": {
-                        "camera_id": 1,
-                        "is_enabled": True
-                    }
-                }
-            }
+                "application/json": {"example": {"camera_id": 1, "is_enabled": True}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
+        },
+    },
 )
 async def enable_camera(camera_id: int):
+    """Enable a camera."""
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
-    
+
     CameraDB.update_camera(camera_id, is_enabled=True)
     return CameraStateResponse(camera_id=camera_id, is_enabled=True)
 
 
 @router.post(
-    "/cameras/{camera_id}/disable", 
+    "/cameras/{camera_id}/disable",
     response_model=CameraStateResponse,
     summary="UC1.h. Disable camera",
     responses={
         200: {
             "description": "Successfully disabled camera",
             "content": {
-                "application/json": {
-                    "example": {
-                        "camera_id": 1,
-                        "is_enabled": False
-                    }
-                }
-            }
+                "application/json": {"example": {"camera_id": 1, "is_enabled": False}}
+            },
         },
         404: {
             "description": "Camera not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Camera not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Camera not found"}}
+            },
+        },
+    },
 )
 async def disable_camera(camera_id: int):
+    """Disable a camera."""
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
-    
+
     CameraDB.update_camera(camera_id, is_enabled=False)
     return CameraStateResponse(camera_id=camera_id, is_enabled=False)
 
 
 @router.get(
-    "/sensors", 
+    "/sensors",
     response_model=SensorListResponse,
     summary="UC2.a. List all sensors",
     responses={
@@ -583,38 +582,43 @@ async def disable_camera(camera_id: int):
                                 "sensor_type": "motion",
                                 "is_armed": False,
                                 "is_triggered": False,
-                                "location": "거실"
+                                "location": "거실",
                             }
                         ]
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
 async def list_all_sensors():
+    """List all available sensors."""
     sensors = []
-    
+
     # Add motion sensors
     for sensor_info in SensorDB.get_all_motion_sensors():
-        sensors.append(SensorStatus(
-            sensor_id=sensor_info.sensor_id,
-            sensor_type="motion",
-            is_armed=sensor_info.is_armed,
-            is_triggered=sensor_info.is_triggered,
-            location=sensor_info.location,
-        ))
-    
-    # Add windoor sensors  
+        sensors.append(
+            SensorStatus(
+                sensor_id=sensor_info.sensor_id,
+                sensor_type="motion",
+                is_armed=sensor_info.is_armed,
+                is_triggered=sensor_info.is_triggered,
+                location=sensor_info.location,
+            )
+        )
+
+    # Add windoor sensors
     for sensor_info in SensorDB.get_all_windoor_sensors():
-        sensors.append(SensorStatus(
-            sensor_id=sensor_info.sensor_id,
-            sensor_type="windoor",
-            is_armed=sensor_info.is_armed,
-            is_triggered=sensor_info.is_opened,
-            location=sensor_info.location,
-        ))
-    
+        sensors.append(
+            SensorStatus(
+                sensor_id=sensor_info.sensor_id,
+                sensor_type="windoor",
+                is_armed=sensor_info.is_armed,
+                is_triggered=sensor_info.is_opened,
+                location=sensor_info.location,
+            )
+        )
+
     return SensorListResponse(sensors=sensors)
 
 
@@ -629,31 +633,28 @@ async def list_all_sensors():
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "motion",
-                        "is_armed": True
+                        "is_armed": True,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Motion detector not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Motion detector not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Motion detector not found"}}
+            },
+        },
+    },
 )
 async def arm_motion_detector(sensor_id: int):
+    """Arm a motion detector sensor."""
     sensor_info = SensorDB.get_motion_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Motion detector not found")
-    
+
     # Update state in database - no direct device manipulation
     SensorDB.update_motion_sensor(sensor_id, is_armed=True)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_armed": True}
 
 
@@ -668,31 +669,28 @@ async def arm_motion_detector(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "motion",
-                        "is_armed": False
+                        "is_armed": False,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Motion detector not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Motion detector not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Motion detector not found"}}
+            },
+        },
+    },
 )
 async def disarm_motion_detector(sensor_id: int):
+    """Disarm a motion detector sensor."""
     sensor_info = SensorDB.get_motion_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Motion detector not found")
-    
+
     # Update state in database - no direct device manipulation
     SensorDB.update_motion_sensor(sensor_id, is_armed=False)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_armed": False}
 
 
@@ -707,31 +705,28 @@ async def disarm_motion_detector(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "motion",
-                        "is_triggered": True
+                        "is_triggered": True,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Motion detector not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Motion detector not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Motion detector not found"}}
+            },
+        },
+    },
 )
 async def trigger_motion_detector(sensor_id: int):
+    """Trigger motion detection on a motion sensor."""
     sensor_info = SensorDB.get_motion_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Motion detector not found")
-    
+
     # Update state in database - this would typically come from client/tester
     SensorDB.update_motion_sensor(sensor_id, is_triggered=True)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_triggered": True}
 
 
@@ -746,31 +741,28 @@ async def trigger_motion_detector(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "motion",
-                        "is_triggered": False
+                        "is_triggered": False,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Motion detector not found",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Motion detector not found"
-                    }
-                }
-            }
-        }
-    }
+                "application/json": {"example": {"detail": "Motion detector not found"}}
+            },
+        },
+    },
 )
 async def release_motion_detector(sensor_id: int):
+    """Release motion detection on a motion sensor."""
     sensor_info = SensorDB.get_motion_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Motion detector not found")
-    
+
     # Update state in database - this would typically come from client/tester
     SensorDB.update_motion_sensor(sensor_id, is_triggered=False)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_triggered": False}
 
 
@@ -785,31 +777,30 @@ async def release_motion_detector(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "windoor",
-                        "is_armed": True
+                        "is_armed": True,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Window/door sensor not found",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "Window/door sensor not found"
-                    }
+                    "example": {"detail": "Window/door sensor not found"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def arm_windoor_sensor(sensor_id: int):
+    """Arm a window/door sensor."""
     sensor_info = SensorDB.get_windoor_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Window/door sensor not found")
-    
+
     # Update state in database - no direct device manipulation
     SensorDB.update_windoor_sensor(sensor_id, is_armed=True)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_armed": True}
 
 
@@ -824,31 +815,30 @@ async def arm_windoor_sensor(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "windoor",
-                        "is_armed": False
+                        "is_armed": False,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Window/door sensor not found",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "Window/door sensor not found"
-                    }
+                    "example": {"detail": "Window/door sensor not found"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def disarm_windoor_sensor(sensor_id: int):
+    """Disarm a window/door sensor."""
     sensor_info = SensorDB.get_windoor_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Window/door sensor not found")
-    
+
     # Update state in database - no direct device manipulation
     SensorDB.update_windoor_sensor(sensor_id, is_armed=False)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_armed": False}
 
 
@@ -863,31 +853,30 @@ async def disarm_windoor_sensor(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "windoor",
-                        "is_opened": True
+                        "is_opened": True,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Window/door sensor not found",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "Window/door sensor not found"
-                    }
+                    "example": {"detail": "Window/door sensor not found"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def open_windoor_sensor(sensor_id: int):
+    """Simulate opening a window/door sensor."""
     sensor_info = SensorDB.get_windoor_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Window/door sensor not found")
-    
+
     # Update state in database - this would typically come from client/tester
     SensorDB.update_windoor_sensor(sensor_id, is_opened=True)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_opened": True}
 
 
@@ -902,31 +891,30 @@ async def open_windoor_sensor(sensor_id: int):
                     "example": {
                         "sensor_id": 1,
                         "sensor_type": "windoor",
-                        "is_opened": False
+                        "is_opened": False,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Window/door sensor not found",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "Window/door sensor not found"
-                    }
+                    "example": {"detail": "Window/door sensor not found"}
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def close_windoor_sensor(sensor_id: int):
+    """Simulate closing a window/door sensor."""
     sensor_info = SensorDB.get_windoor_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Window/door sensor not found")
-    
+
     # Update state in database - this would typically come from client/tester
     SensorDB.update_windoor_sensor(sensor_id, is_opened=False)
-    
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_opened": False}
 
 
@@ -947,8 +935,8 @@ async def close_windoor_sensor(sensor_id: int):
                                 "location": "거실",
                                 "is_armed": True,
                                 "is_triggered": False,
-                                "reading": 0
-                            }
+                                "reading": 0,
+                            },
                         },
                         "windoor_sensor": {
                             "summary": "Window/door sensor status",
@@ -958,12 +946,12 @@ async def close_windoor_sensor(sensor_id: int):
                                 "location": "정문",
                                 "is_armed": True,
                                 "is_opened": False,
-                                "reading": 0
-                            }
-                        }
+                                "reading": 0,
+                            },
+                        },
                     }
                 }
-            }
+            },
         },
         400: {
             "description": "Invalid sensor type",
@@ -973,7 +961,7 @@ async def close_windoor_sensor(sensor_id: int):
                         "detail": "Invalid sensor type. Use 'motion' or 'windoor'."
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Sensor not found",
@@ -982,28 +970,25 @@ async def close_windoor_sensor(sensor_id: int):
                     "examples": {
                         "motion_not_found": {
                             "summary": "Motion detector not found",
-                            "value": {
-                                "detail": "Motion detector not found"
-                            }
+                            "value": {"detail": "Motion detector not found"},
                         },
                         "windoor_not_found": {
                             "summary": "Window/door sensor not found",
-                            "value": {
-                                "detail": "Window/door sensor not found"
-                            }
-                        }
+                            "value": {"detail": "Window/door sensor not found"},
+                        },
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def get_sensor_status(sensor_type: str, sensor_id: int):
+    """Get detailed status of a sensor."""
     if sensor_type == "motion":
         sensor_info = SensorDB.get_motion_sensor(sensor_id)
         if not sensor_info:
             raise HTTPException(status_code=404, detail="Motion detector not found")
-        
+
         # Return state from database only - no direct device access
         # Provide a simulated reading based on current state
         reading = 1 if sensor_info.is_triggered else 0
@@ -1015,12 +1000,12 @@ async def get_sensor_status(sensor_type: str, sensor_id: int):
             "is_triggered": sensor_info.is_triggered,
             "reading": reading,
         }
-    
+
     elif sensor_type == "windoor":
         sensor_info = SensorDB.get_windoor_sensor(sensor_id)
         if not sensor_info:
             raise HTTPException(status_code=404, detail="Window/door sensor not found")
-        
+
         # Return state from database only - no direct device access
         # Provide a simulated reading based on current state
         reading = 1 if sensor_info.is_opened else 0
@@ -1032,6 +1017,8 @@ async def get_sensor_status(sensor_type: str, sensor_id: int):
             "is_opened": sensor_info.is_opened,
             "reading": reading,
         }
-    
+
     else:
-        raise HTTPException(status_code=400, detail="Invalid sensor type. Use 'motion' or 'windoor'.")
+        raise HTTPException(
+            status_code=400, detail="Invalid sensor type. Use 'motion' or 'windoor'."
+        )
