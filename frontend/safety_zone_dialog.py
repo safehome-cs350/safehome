@@ -7,7 +7,6 @@ from tkinter import messagebox, ttk
 class SafetyZoneDialog(tk.Toplevel):
     """Dialog for safety zone creation and editing."""
 
-
     def __init__(self, parent, zone_data=None):
         """Initialize the safety zone dialog."""
         super().__init__(parent)
@@ -71,9 +70,7 @@ class SafetyZoneDialog(tk.Toplevel):
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
-        ok_btn = ttk.Button(
-            button_frame, text="OK", command=self.ok_clicked, width=12
-        )
+        ok_btn = ttk.Button(button_frame, text="OK", command=self.ok_clicked, width=12)
         ok_btn.pack(side=tk.LEFT, padx=5)
         cancel_btn = ttk.Button(
             button_frame, text="Cancel", command=self.cancel_clicked, width=12

@@ -3,8 +3,6 @@
 import tkinter as tk
 from unittest.mock import Mock, patch
 
-import pytest
-
 from frontend.login_window import LoginWindow
 
 

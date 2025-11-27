@@ -1,6 +1,5 @@
 """Surveillance panel for camera management."""
 
-import os
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
@@ -79,9 +78,7 @@ class SurveillancePanel(ttk.Frame):
 
         self.camera_tree.bind("<<TreeviewSelect>>", self.on_camera_select)
 
-        control_frame = ttk.LabelFrame(
-            left_frame, text="Camera Controls", padding=10
-        )
+        control_frame = ttk.LabelFrame(left_frame, text="Camera Controls", padding=10)
         control_frame.pack(fill=tk.X, pady=5)
 
         enable_btn = ttk.Button(
@@ -130,16 +127,12 @@ class SurveillancePanel(ttk.Frame):
         thumbnail_btn.pack(pady=2)
 
         right_frame = ttk.LabelFrame(self, text="Camera View", padding=10)
-        right_frame.pack(
-            side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5
-        )
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         view_frame = ttk.Frame(right_frame)
         view_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.camera_canvas = tk.Canvas(
-            view_frame, bg="black", width=640, height=480
-        )
+        self.camera_canvas = tk.Canvas(view_frame, bg="black", width=640, height=480)
         self.camera_canvas.pack(fill=tk.BOTH, expand=True)
 
         self.camera_canvas.create_text(
@@ -221,9 +214,7 @@ class SurveillancePanel(ttk.Frame):
 
         for cam_id, camera in sorted(self.cameras.items()):
             status = "Enabled" if camera["enabled"] else "Disabled"
-            password_status = (
-                "Protected" if camera["password"] else "No Password"
-            )
+            password_status = "Protected" if camera["password"] else "No Password"
             self.camera_tree.insert(
                 "",
                 tk.END,
@@ -345,9 +336,7 @@ class SurveillancePanel(ttk.Frame):
         """Enable the selected camera."""
         selected = self.camera_tree.selection()
         if not selected:
-            messagebox.showinfo(
-                "No Selection", "Please select a camera to enable"
-            )
+            messagebox.showinfo("No Selection", "Please select a camera to enable")
             return
 
         item = self.camera_tree.item(selected[0])
@@ -364,9 +353,7 @@ class SurveillancePanel(ttk.Frame):
         """Disable the selected camera."""
         selected = self.camera_tree.selection()
         if not selected:
-            messagebox.showinfo(
-                "No Selection", "Please select a camera to disable"
-            )
+            messagebox.showinfo("No Selection", "Please select a camera to disable")
             return
 
         item = self.camera_tree.item(selected[0])
@@ -444,9 +431,7 @@ class SurveillancePanel(ttk.Frame):
                 img = Image.open(str(floor_plan_path))
                 img = img.resize((800, 600), Image.Resampling.LANCZOS)
                 floor_plan_img = ImageTk.PhotoImage(img)
-                canvas.create_image(
-                    400, 300, image=floor_plan_img, anchor=tk.CENTER
-                )
+                canvas.create_image(400, 300, image=floor_plan_img, anchor=tk.CENTER)
                 canvas.image = floor_plan_img
             except Exception:
                 canvas.create_text(

@@ -3,8 +3,6 @@
 import tkinter as tk
 from unittest.mock import Mock, patch
 
-import pytest
-
 from frontend.main import SafeHomeApp
 
 
@@ -74,9 +72,7 @@ class TestSafeHomeApp:
                 app.on_login_success("test_user")
                 app.update_status("Test message")
 
-                mock_dashboard.update_status.assert_called_once_with(
-                    "Test message"
-                )
+                mock_dashboard.update_status.assert_called_once_with("Test message")
 
             app.root.destroy()
 

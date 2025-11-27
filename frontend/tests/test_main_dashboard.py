@@ -3,8 +3,6 @@
 import tkinter as tk
 from unittest.mock import Mock
 
-import pytest
-
 from frontend.main_dashboard import MainDashboard
 
 

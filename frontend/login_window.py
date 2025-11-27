@@ -7,7 +7,6 @@ from tkinter import messagebox, ttk
 class LoginWindow(tk.Toplevel):
     """Login window dialog."""
 
-
     def __init__(self, parent, on_success_callback):
         """Initialize the login window."""
         super().__init__(parent)
@@ -45,9 +44,7 @@ class LoginWindow(tk.Toplevel):
         login_button.pack(pady=(0, 10))
 
         self.password_entry.bind("<Return>", lambda e: self.handle_login())
-        self.username_entry.bind(
-            "<Return>", lambda e: self.password_entry.focus()
-        )
+        self.username_entry.bind("<Return>", lambda e: self.password_entry.focus())
 
         self.default_username = "admin"
         self.default_password = "admin123"
@@ -72,10 +69,7 @@ class LoginWindow(tk.Toplevel):
             )
             return
 
-        if (
-            username == self.default_username
-            and password == self.default_password
-        ):
+        if username == self.default_username and password == self.default_password:
             self.destroy()
             self.on_success(username)
         else:

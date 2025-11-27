@@ -7,7 +7,6 @@ from tkinter import messagebox, ttk
 class ConfigurationPanel(ttk.Frame):
     """Panel for system configuration and settings."""
 
-
     def __init__(self, parent, app):
         """Initialize the configuration panel."""
         super().__init__(parent)
@@ -28,9 +27,7 @@ class ConfigurationPanel(ttk.Frame):
         main_frame = ttk.Frame(self, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        settings_frame = ttk.LabelFrame(
-            main_frame, text="System Settings", padding=15
-        )
+        settings_frame = ttk.LabelFrame(main_frame, text="System Settings", padding=15)
         settings_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         row = 0
@@ -38,9 +35,9 @@ class ConfigurationPanel(ttk.Frame):
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
         self.system_name_var = tk.StringVar(value=self.settings["system_name"])
-        ttk.Entry(
-            settings_frame, textvariable=self.system_name_var, width=30
-        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
+        ttk.Entry(settings_frame, textvariable=self.system_name_var, width=30).grid(
+            row=row, column=1, pady=5, padx=5, sticky=tk.W
+        )
 
         row += 1
         ttk.Label(settings_frame, text="Master Password:").grid(
@@ -71,9 +68,7 @@ class ConfigurationPanel(ttk.Frame):
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
         guest_password_frame = ttk.Frame(settings_frame)
-        guest_password_frame.grid(
-            row=row, column=1, pady=5, padx=5, sticky=tk.W
-        )
+        guest_password_frame.grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
         self.guest_password_var = tk.StringVar(value="********")
         self.guest_password_entry = ttk.Entry(
@@ -96,9 +91,7 @@ class ConfigurationPanel(ttk.Frame):
         ttk.Label(settings_frame, text="Delay Time (seconds):").grid(
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
-        self.delay_time_var = tk.StringVar(
-            value=str(self.settings["delay_time"])
-        )
+        self.delay_time_var = tk.StringVar(value=str(self.settings["delay_time"]))
         delay_frame = ttk.Frame(settings_frame)
         delay_frame.grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
@@ -113,24 +106,18 @@ class ConfigurationPanel(ttk.Frame):
         ttk.Label(settings_frame, text="Monitoring Phone:").grid(
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
-        self.phone_number_var = tk.StringVar(
-            value=self.settings["phone_number"]
+        self.phone_number_var = tk.StringVar(value=self.settings["phone_number"])
+        ttk.Entry(settings_frame, textvariable=self.phone_number_var, width=30).grid(
+            row=row, column=1, pady=5, padx=5, sticky=tk.W
         )
-        ttk.Entry(
-            settings_frame, textvariable=self.phone_number_var, width=30
-        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
-        control_frame = ttk.LabelFrame(
-            main_frame, text="System Control", padding=15
-        )
+        control_frame = ttk.LabelFrame(main_frame, text="System Control", padding=15)
         control_frame.pack(fill=tk.X, pady=10)
 
         system_control_frame = ttk.Frame(control_frame)
         system_control_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(system_control_frame, text="System Power:").pack(
-            side=tk.LEFT, padx=5
-        )
+        ttk.Label(system_control_frame, text="System Power:").pack(side=tk.LEFT, padx=5)
         self.system_power_var = tk.StringVar(value="ON")
         power_status_label = ttk.Label(
             system_control_frame,
@@ -196,18 +183,14 @@ class ConfigurationPanel(ttk.Frame):
         dialog = PasswordChangeDialog(self, "Master Password")
         if dialog.result:
             self.settings["master_password"] = dialog.result
-            messagebox.showinfo(
-                "Success", "Master password changed successfully"
-            )
+            messagebox.showinfo("Success", "Master password changed successfully")
 
     def change_guest_password(self):
         """Open dialog to change guest password."""
         dialog = PasswordChangeDialog(self, "Guest Password")
         if dialog.result:
             self.settings["guest_password"] = dialog.result
-            messagebox.showinfo(
-                "Success", "Guest password changed successfully"
-            )
+            messagebox.showinfo("Success", "Guest password changed successfully")
 
     def turn_system_on(self):
         """Turn the system on."""
@@ -296,9 +279,7 @@ class PasswordChangeDialog(tk.Toplevel):
         main_frame = ttk.Frame(self, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Current Password:").pack(
-            anchor=tk.W, pady=5
-        )
+        ttk.Label(main_frame, text="Current Password:").pack(anchor=tk.W, pady=5)
         self.current_password_entry = ttk.Entry(main_frame, width=30, show="*")
         self.current_password_entry.pack(pady=(0, 15))
 
@@ -306,18 +287,14 @@ class PasswordChangeDialog(tk.Toplevel):
         self.new_password_entry = ttk.Entry(main_frame, width=30, show="*")
         self.new_password_entry.pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text="Confirm New Password:").pack(
-            anchor=tk.W, pady=5
-        )
+        ttk.Label(main_frame, text="Confirm New Password:").pack(anchor=tk.W, pady=5)
         self.confirm_password_entry = ttk.Entry(main_frame, width=30, show="*")
         self.confirm_password_entry.pack(pady=(0, 20))
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack()
 
-        ok_btn = ttk.Button(
-            button_frame, text="OK", command=self.ok_clicked, width=12
-        )
+        ok_btn = ttk.Button(button_frame, text="OK", command=self.ok_clicked, width=12)
         ok_btn.pack(side=tk.LEFT, padx=5)
         cancel_btn = ttk.Button(
             button_frame, text="Cancel", command=self.cancel_clicked, width=12
@@ -350,9 +327,7 @@ class PasswordChangeDialog(tk.Toplevel):
             return
 
         if len(new) < 4:
-            messagebox.showerror(
-                "Error", "Password must be at least 4 characters"
-            )
+            messagebox.showerror("Error", "Password must be at least 4 characters")
             return
 
         self.result = new

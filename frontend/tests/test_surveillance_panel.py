@@ -2,9 +2,7 @@
 
 import tkinter as tk
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from frontend.surveillance_panel import SurveillancePanel
 

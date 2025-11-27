@@ -11,7 +11,6 @@ from .surveillance_panel import SurveillancePanel
 class MainDashboard(ttk.Frame):
     """Main dashboard containing all panels."""
 
-
     def __init__(self, parent, app):
         """Initialize the main dashboard."""
         super().__init__(parent)
@@ -30,9 +29,7 @@ class MainDashboard(ttk.Frame):
         menu_frame = ttk.Frame(self)
         menu_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        title_label = ttk.Label(
-            menu_frame, text="SafeHome", font=("Arial", 18, "bold")
-        )
+        title_label = ttk.Label(menu_frame, text="SafeHome", font=("Arial", 18, "bold"))
         title_label.pack(side=tk.LEFT, padx=10)
 
         nav_frame = ttk.Frame(menu_frame)
@@ -61,9 +58,7 @@ class MainDashboard(ttk.Frame):
         self.security_panel = SecurityPanel(self.content_notebook, self.app)
         self.content_notebook.add(self.security_panel, text="Security")
 
-        self.surveillance_panel = SurveillancePanel(
-            self.content_notebook, self.app
-        )
+        self.surveillance_panel = SurveillancePanel(self.content_notebook, self.app)
         self.content_notebook.add(self.surveillance_panel, text="Surveillance")
 
         self.config_panel = ConfigurationPanel(self.content_notebook, self.app)

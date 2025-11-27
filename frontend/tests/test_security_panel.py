@@ -1,10 +1,7 @@
 """Tests for security panel."""
 
 import tkinter as tk
-from datetime import datetime
 from unittest.mock import Mock, patch
-
-import pytest
 
 from frontend.security_panel import SecurityPanel
 
@@ -145,9 +142,7 @@ class TestSecurityPanel:
         panel.trigger_panic()
 
         assert len(panel.intrusion_log) > 0
-        panic_entries = [
-            entry for entry in panel.intrusion_log if "PANIC" in entry[3]
-        ]
+        panic_entries = [entry for entry in panel.intrusion_log if "PANIC" in entry[3]]
         assert len(panic_entries) > 0
         mock_messagebox.askyesno.assert_called_once()
         mock_messagebox.showwarning.assert_called_once()

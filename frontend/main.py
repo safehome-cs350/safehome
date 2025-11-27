@@ -3,7 +3,6 @@
 """Main application entry point for SafeHome frontend."""
 
 import tkinter as tk
-from tkinter import ttk
 
 from .login_window import LoginWindow
 from .main_dashboard import MainDashboard
@@ -11,7 +10,6 @@ from .main_dashboard import MainDashboard
 
 class SafeHomeApp:
     """Main application class for SafeHome system."""
-
 
     def __init__(self):
         """Initialize the SafeHome application."""

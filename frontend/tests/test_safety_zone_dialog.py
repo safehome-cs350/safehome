@@ -3,8 +3,6 @@
 import tkinter as tk
 from unittest.mock import patch
 
-import pytest
-
 from frontend.safety_zone_dialog import SafetyZoneDialog
 
 
