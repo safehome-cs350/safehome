@@ -333,8 +333,6 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
                 elif current_pan > target_pan:
                     success = device_camera.pan_left()
                     current_pan = device_camera.pan
-                else:
-                    break
                     
             if not success:
                 messages.append(f"Pan limit reached at {current_pan}")
@@ -350,8 +348,6 @@ async def control_camera_ptz(camera_id: int, cmd: PTZCommand):
                 elif current_zoom > target_zoom:
                     success = device_camera.zoom_out()
                     current_zoom = device_camera.zoom
-                else:
-                    break
                     
             if not success:
                 messages.append(f"Zoom limit reached at {current_zoom}")
