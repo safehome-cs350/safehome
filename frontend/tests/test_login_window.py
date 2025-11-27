@@ -1,3 +1,5 @@
+"""Tests for login window."""
+
 import tkinter as tk
 from unittest.mock import Mock, patch
 
@@ -7,6 +9,8 @@ from frontend.login_window import LoginWindow
 
 
 class TestLoginWindow:
+    """Test cases for LoginWindow class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()

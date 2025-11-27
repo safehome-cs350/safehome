@@ -1,3 +1,5 @@
+"""Main dashboard for SafeHome system."""
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -7,23 +9,30 @@ from .surveillance_panel import SurveillancePanel
 
 
 class MainDashboard(ttk.Frame):
+    """Main dashboard containing all panels."""
+
 
     def __init__(self, parent, app):
+        """Initialize the main dashboard."""
         super().__init__(parent)
         self.app = app
 
         self.setup_ui()
 
     def setup_ui(self):
+        """Set up the user interface."""
         self.create_menu_bar()
         self.create_content_area()
         self.create_status_bar()
 
     def create_menu_bar(self):
+        """Create the menu bar with title and user info."""
         menu_frame = ttk.Frame(self)
         menu_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        title_label = ttk.Label(menu_frame, text="SafeHome", font=("Arial", 18, "bold"))
+        title_label = ttk.Label(
+            menu_frame, text="SafeHome", font=("Arial", 18, "bold")
+        )
         title_label.pack(side=tk.LEFT, padx=10)
 
         nav_frame = ttk.Frame(menu_frame)
@@ -32,20 +41,29 @@ class MainDashboard(ttk.Frame):
         user_frame = ttk.Frame(menu_frame)
         user_frame.pack(side=tk.RIGHT, padx=10)
 
-        user_label = ttk.Label(user_frame, text=f"User: {self.app.current_user}", font=("Arial", 10))
+        user_label = ttk.Label(
+            user_frame,
+            text=f"User: {self.app.current_user}",
+            font=("Arial", 10),
+        )
         user_label.pack(side=tk.LEFT, padx=5)
 
-        logout_btn = ttk.Button(user_frame, text="Logout", command=self.app.logout, width=10)
+        logout_btn = ttk.Button(
+            user_frame, text="Logout", command=self.app.logout, width=10
+        )
         logout_btn.pack(side=tk.LEFT, padx=5)
 
     def create_content_area(self):
+        """Create the content area with tabs."""
         self.content_notebook = ttk.Notebook(self)
         self.content_notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self.security_panel = SecurityPanel(self.content_notebook, self.app)
         self.content_notebook.add(self.security_panel, text="Security")
 
-        self.surveillance_panel = SurveillancePanel(self.content_notebook, self.app)
+        self.surveillance_panel = SurveillancePanel(
+            self.content_notebook, self.app
+        )
         self.content_notebook.add(self.surveillance_panel, text="Surveillance")
 
         self.config_panel = ConfigurationPanel(self.content_notebook, self.app)
@@ -54,13 +72,17 @@ class MainDashboard(ttk.Frame):
         self.content_notebook.select(0)
 
     def create_status_bar(self):
+        """Create the status bar at the bottom."""
         status_frame = ttk.Frame(self)
         status_frame.pack(fill=tk.X, side=tk.BOTTOM, padx=5, pady=5)
 
-        self.status_label = ttk.Label(status_frame, text="System Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_label = ttk.Label(
+            status_frame, text="System Ready", relief=tk.SUNKEN, anchor=tk.W
+        )
         self.status_label.pack(fill=tk.X)
 
     def show_panel(self, panel_name):
+        """Switch to the specified panel."""
         panel_map = {
             "security": 0,
             "surveillance": 1,
@@ -70,4 +92,5 @@ class MainDashboard(ttk.Frame):
             self.content_notebook.select(panel_map[panel_name])
 
     def update_status(self, message):
+        """Update the status bar message."""
         self.status_label.config(text=message)

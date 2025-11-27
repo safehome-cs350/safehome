@@ -1,3 +1,5 @@
+"""Tests for security panel."""
+
 import tkinter as tk
 from datetime import datetime
 from unittest.mock import Mock, patch
@@ -8,6 +10,8 @@ from frontend.security_panel import SecurityPanel
 
 
 class TestSecurityPanel:
+    """Test cases for SecurityPanel class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -17,7 +21,7 @@ class TestSecurityPanel:
         panel = SecurityPanel(root, app)
 
         assert panel.app == app
-        assert panel.system_armed == False
+        assert not panel.system_armed
         assert panel.system_mode == "disarmed"
         assert isinstance(panel.safety_zones, dict)
         assert isinstance(panel.intrusion_log, list)
@@ -51,7 +55,7 @@ class TestSecurityPanel:
 
         panel.arm_system()
 
-        assert panel.system_armed == True
+        assert panel.system_armed
         assert panel.status_label.cget("text") == "ARMED"
         mock_messagebox.askyesno.assert_called_once()
         app.update_status.assert_called_once()
@@ -73,7 +77,7 @@ class TestSecurityPanel:
 
         panel.disarm_system()
 
-        assert panel.system_armed == False
+        assert not panel.system_armed
         assert panel.status_label.cget("text") == "DISARMED"
         mock_messagebox.askyesno.assert_called_once()
         app.update_status.assert_called_once()
@@ -105,7 +109,6 @@ class TestSecurityPanel:
 
         panel = SecurityPanel(root, app)
 
-        initial_items = len(panel.zones_tree.get_children())
         panel.refresh_zones_display()
 
         items = panel.zones_tree.get_children()
@@ -142,7 +145,9 @@ class TestSecurityPanel:
         panel.trigger_panic()
 
         assert len(panel.intrusion_log) > 0
-        panic_entries = [entry for entry in panel.intrusion_log if "PANIC" in entry[3]]
+        panic_entries = [
+            entry for entry in panel.intrusion_log if "PANIC" in entry[3]
+        ]
         assert len(panic_entries) > 0
         mock_messagebox.askyesno.assert_called_once()
         mock_messagebox.showwarning.assert_called_once()

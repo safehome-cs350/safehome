@@ -1,10 +1,15 @@
+"""Dialog for creating and editing safety zones."""
+
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox, ttk
 
 
 class SafetyZoneDialog(tk.Toplevel):
+    """Dialog for safety zone creation and editing."""
+
 
     def __init__(self, parent, zone_data=None):
+        """Initialize the safety zone dialog."""
         super().__init__(parent)
         self.result = None
 
@@ -20,7 +25,9 @@ class SafetyZoneDialog(tk.Toplevel):
         main_frame = ttk.Frame(self, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Zone Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Zone Name:").grid(
+            row=0, column=0, sticky=tk.W, pady=5
+        )
         self.name_entry = ttk.Entry(main_frame, width=30)
         self.name_entry.grid(row=0, column=1, pady=5, padx=5)
         if zone_data:
@@ -32,10 +39,14 @@ class SafetyZoneDialog(tk.Toplevel):
         sensor_frame = ttk.Frame(main_frame)
         sensor_frame.grid(row=1, column=1, pady=5, padx=5, sticky=tk.W)
 
-        self.sensor_listbox = tk.Listbox(sensor_frame, height=6, width=30, selectmode=tk.MULTIPLE)
+        self.sensor_listbox = tk.Listbox(
+            sensor_frame, height=6, width=30, selectmode=tk.MULTIPLE
+        )
         self.sensor_listbox.pack(side=tk.LEFT, fill=tk.BOTH)
 
-        scrollbar = ttk.Scrollbar(sensor_frame, orient=tk.VERTICAL, command=self.sensor_listbox.yview)
+        scrollbar = ttk.Scrollbar(
+            sensor_frame, orient=tk.VERTICAL, command=self.sensor_listbox.yview
+        )
         self.sensor_listbox.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -60,16 +71,19 @@ class SafetyZoneDialog(tk.Toplevel):
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
-        ttk.Button(
+        ok_btn = ttk.Button(
             button_frame, text="OK", command=self.ok_clicked, width=12
-        ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(
+        )
+        ok_btn.pack(side=tk.LEFT, padx=5)
+        cancel_btn = ttk.Button(
             button_frame, text="Cancel", command=self.cancel_clicked, width=12
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        cancel_btn.pack(side=tk.LEFT, padx=5)
 
         self.name_entry.focus()
 
     def center_window(self):
+        """Center the window on the screen."""
         self.update_idletasks()
         width = self.winfo_width()
         height = self.winfo_height()
@@ -78,6 +92,7 @@ class SafetyZoneDialog(tk.Toplevel):
         self.geometry(f"{width}x{height}+{x}+{y}")
 
     def ok_clicked(self):
+        """Handle OK button click and validate input."""
         name = self.name_entry.get().strip()
         if not name:
             messagebox.showerror("Error", "Please enter a zone name")
@@ -98,4 +113,5 @@ class SafetyZoneDialog(tk.Toplevel):
         self.destroy()
 
     def cancel_clicked(self):
+        """Handle Cancel button click."""
         self.destroy()

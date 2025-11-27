@@ -1,3 +1,5 @@
+"""Security panel for system security management."""
+
 import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
@@ -6,8 +8,11 @@ from .safety_zone_dialog import SafetyZoneDialog
 
 
 class SecurityPanel(ttk.Frame):
+    """Panel for security system management."""
+
 
     def __init__(self, parent, app):
+        """Initialize the security panel."""
         super().__init__(parent)
         self.app = app
 
@@ -19,20 +24,30 @@ class SecurityPanel(ttk.Frame):
         self.setup_ui()
 
     def setup_ui(self):
+        """Set up the user interface."""
         left_frame = ttk.LabelFrame(self, text="System Control", padding=10)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         status_frame = ttk.Frame(left_frame)
         status_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(status_frame, text="System Status:", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        self.status_label = ttk.Label(status_frame, text="DISARMED", font=("Arial", 12, "bold"), foreground="green")
+        ttk.Label(
+            status_frame, text="System Status:", font=("Arial", 10, "bold")
+        ).pack(side=tk.LEFT)
+        self.status_label = ttk.Label(
+            status_frame,
+            text="DISARMED",
+            font=("Arial", 12, "bold"),
+            foreground="green",
+        )
         self.status_label.pack(side=tk.LEFT, padx=10)
 
         control_frame = ttk.Frame(left_frame)
         control_frame.pack(fill=tk.X, pady=10)
 
-        self.arm_btn = ttk.Button(control_frame, text="Arm System", command=self.arm_system, width=20)
+        self.arm_btn = ttk.Button(
+            control_frame, text="Arm System", command=self.arm_system, width=20
+        )
         self.arm_btn.pack(pady=5)
 
         self.disarm_btn = ttk.Button(
@@ -56,7 +71,10 @@ class SecurityPanel(ttk.Frame):
         ]
 
         for text, value in modes:
-            ttk.Radiobutton(mode_frame, text=text, variable=self.mode_var, value=value).pack(anchor=tk.W, pady=2)
+            radio = ttk.Radiobutton(
+                mode_frame, text=text, variable=self.mode_var, value=value
+            )
+            radio.pack(anchor=tk.W, pady=2)
 
         panic_frame = ttk.Frame(left_frame)
         panic_frame.pack(fill=tk.X, pady=10)
@@ -79,16 +97,22 @@ class SecurityPanel(ttk.Frame):
         monitoring_btn.pack(pady=5)
 
         right_frame = ttk.Frame(self)
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        right_frame.pack(
+            side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5
+        )
 
-        zones_frame = ttk.LabelFrame(right_frame, text="Safety Zones", padding=10)
+        zones_frame = ttk.LabelFrame(
+            right_frame, text="Safety Zones", padding=10
+        )
         zones_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
 
         zones_list_frame = ttk.Frame(zones_frame)
         zones_list_frame.pack(fill=tk.BOTH, expand=True)
 
         columns = ("zone_id", "name", "status", "sensors")
-        self.zones_tree = ttk.Treeview(zones_list_frame, columns=columns, show="headings", height=8)
+        self.zones_tree = ttk.Treeview(
+            zones_list_frame, columns=columns, show="headings", height=8
+        )
         self.zones_tree.heading("zone_id", text="Zone ID")
         self.zones_tree.heading("name", text="Name")
         self.zones_tree.heading("status", text="Status")
@@ -99,7 +123,9 @@ class SecurityPanel(ttk.Frame):
         self.zones_tree.column("status", width=100)
         self.zones_tree.column("sensors", width=100)
 
-        scrollbar_zones = ttk.Scrollbar(zones_list_frame, orient=tk.VERTICAL, command=self.zones_tree.yview)
+        scrollbar_zones = ttk.Scrollbar(
+            zones_list_frame, orient=tk.VERTICAL, command=self.zones_tree.yview
+        )
         self.zones_tree.configure(yscrollcommand=scrollbar_zones.set)
 
         self.zones_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -108,9 +134,24 @@ class SecurityPanel(ttk.Frame):
         zone_btn_frame = ttk.Frame(zones_frame)
         zone_btn_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(zone_btn_frame, text="Create Zone", command=self.create_zone, width=12).pack(side=tk.LEFT, padx=2)
-        ttk.Button(zone_btn_frame, text="Edit Zone", command=self.edit_zone, width=12).pack(side=tk.LEFT, padx=2)
-        ttk.Button(zone_btn_frame, text="Delete Zone", command=self.delete_zone, width=12).pack(side=tk.LEFT, padx=2)
+        create_btn = ttk.Button(
+            zone_btn_frame,
+            text="Create Zone",
+            command=self.create_zone,
+            width=12,
+        )
+        create_btn.pack(side=tk.LEFT, padx=2)
+        edit_btn = ttk.Button(
+            zone_btn_frame, text="Edit Zone", command=self.edit_zone, width=12
+        )
+        edit_btn.pack(side=tk.LEFT, padx=2)
+        delete_btn = ttk.Button(
+            zone_btn_frame,
+            text="Delete Zone",
+            command=self.delete_zone,
+            width=12,
+        )
+        delete_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(
             zone_btn_frame,
             text="Arm/Disarm Zone",
@@ -118,14 +159,18 @@ class SecurityPanel(ttk.Frame):
             width=15,
         ).pack(side=tk.LEFT, padx=2)
 
-        log_frame = ttk.LabelFrame(right_frame, text="Intrusion Log", padding=10)
+        log_frame = ttk.LabelFrame(
+            right_frame, text="Intrusion Log", padding=10
+        )
         log_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
 
         log_list_frame = ttk.Frame(log_frame)
         log_list_frame.pack(fill=tk.BOTH, expand=True)
 
         log_columns = ("timestamp", "zone", "sensor", "event")
-        self.log_tree = ttk.Treeview(log_list_frame, columns=log_columns, show="headings", height=8)
+        self.log_tree = ttk.Treeview(
+            log_list_frame, columns=log_columns, show="headings", height=8
+        )
         self.log_tree.heading("timestamp", text="Timestamp")
         self.log_tree.heading("zone", text="Zone")
         self.log_tree.heading("sensor", text="Sensor")
@@ -136,7 +181,9 @@ class SecurityPanel(ttk.Frame):
         self.log_tree.column("sensor", width=100)
         self.log_tree.column("event", width=200)
 
-        scrollbar_log = ttk.Scrollbar(log_list_frame, orient=tk.VERTICAL, command=self.log_tree.yview)
+        scrollbar_log = ttk.Scrollbar(
+            log_list_frame, orient=tk.VERTICAL, command=self.log_tree.yview
+        )
         self.log_tree.configure(yscrollcommand=scrollbar_log.set)
 
         self.log_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -147,14 +194,30 @@ class SecurityPanel(ttk.Frame):
         self.refresh_log_display()
 
     def initialize_sample_data(self):
+        """Initialize sample safety zones data."""
         self.safety_zones = {
-            1: {"name": "Front Door", "sensors": ["Door Sensor 1"], "armed": False},
-            2: {"name": "Living Room", "sensors": ["Motion 1", "Window 1"], "armed": False},
-            3: {"name": "Back Door", "sensors": ["Door Sensor 2"], "armed": False},
+            1: {
+                "name": "Front Door",
+                "sensors": ["Door Sensor 1"],
+                "armed": False,
+            },
+            2: {
+                "name": "Living Room",
+                "sensors": ["Motion 1", "Window 1"],
+                "armed": False,
+            },
+            3: {
+                "name": "Back Door",
+                "sensors": ["Door Sensor 2"],
+                "armed": False,
+            },
         }
 
     def arm_system(self):
-        result = messagebox.askyesno("Arm System", "Are you sure you want to arm the system?")
+        """Arm the security system."""
+        result = messagebox.askyesno(
+            "Arm System", "Are you sure you want to arm the system?"
+        )
         if result:
             self.system_armed = True
             self.system_mode = self.mode_var.get()
@@ -162,10 +225,15 @@ class SecurityPanel(ttk.Frame):
             self.arm_btn.config(state=tk.DISABLED)
             self.disarm_btn.config(state=tk.NORMAL)
             self.add_log_entry("System", "System", "System Armed")
-            self.app.update_status("System Armed - Mode: " + self.system_mode.title())
+            self.app.update_status(
+                "System Armed - Mode: " + self.system_mode.title()
+            )
 
     def disarm_system(self):
-        result = messagebox.askyesno("Disarm System", "Are you sure you want to disarm the system?")
+        """Disarm the security system."""
+        result = messagebox.askyesno(
+            "Disarm System", "Are you sure you want to disarm the system?"
+        )
         if result:
             self.system_armed = False
             self.status_label.config(text="DISARMED", foreground="green")
@@ -175,16 +243,23 @@ class SecurityPanel(ttk.Frame):
             self.app.update_status("System Disarmed")
 
     def trigger_panic(self):
+        """Trigger panic alarm."""
         result = messagebox.askyesno(
             "Panic Alarm",
             "This will trigger a panic alarm and call monitoring service. Continue?",
         )
         if result:
-            self.add_log_entry("System", "Panic Button", "PANIC ALARM TRIGGERED")
+            self.add_log_entry(
+                "System", "Panic Button", "PANIC ALARM TRIGGERED"
+            )
             self.call_monitoring_service()
-            messagebox.showwarning("Panic Alarm", "Panic alarm activated! Monitoring service notified.")
+            messagebox.showwarning(
+                "Panic Alarm",
+                "Panic alarm activated! Monitoring service notified.",
+            )
 
     def call_monitoring_service(self):
+        """Call the monitoring service."""
         self.add_log_entry("System", "Monitoring", "Monitoring Service Called")
         messagebox.showinfo(
             "Monitoring Service",
@@ -192,14 +267,20 @@ class SecurityPanel(ttk.Frame):
         )
 
     def create_zone(self):
+        """Create a new safety zone."""
         dialog = SafetyZoneDialog(self, None)
         if dialog.result:
             zone_id = max(self.safety_zones.keys(), default=0) + 1
             self.safety_zones[zone_id] = dialog.result
             self.refresh_zones_display()
-            self.add_log_entry(f"Zone {zone_id}", "System", f"Zone '{dialog.result['name']}' created")
+            self.add_log_entry(
+                f"Zone {zone_id}",
+                "System",
+                f"Zone '{dialog.result['name']}' created",
+            )
 
     def edit_zone(self):
+        """Edit an existing safety zone."""
         selected = self.zones_tree.selection()
         if not selected:
             messagebox.showinfo("No Selection", "Please select a zone to edit")
@@ -220,25 +301,36 @@ class SecurityPanel(ttk.Frame):
                 )
 
     def delete_zone(self):
+        """Delete a safety zone."""
         selected = self.zones_tree.selection()
         if not selected:
-            messagebox.showinfo("No Selection", "Please select a zone to delete")
+            messagebox.showinfo(
+                "No Selection", "Please select a zone to delete"
+            )
             return
 
         item = self.zones_tree.item(selected[0])
         zone_id = int(item["values"][0])
         zone_name = item["values"][1]
 
-        result = messagebox.askyesno("Delete Zone", f"Are you sure you want to delete zone '{zone_name}'?")
+        result = messagebox.askyesno(
+            "Delete Zone",
+            f"Are you sure you want to delete zone '{zone_name}'?",
+        )
         if result:
             del self.safety_zones[zone_id]
             self.refresh_zones_display()
-            self.add_log_entry(f"Zone {zone_id}", "System", f"Zone '{zone_name}' deleted")
+            self.add_log_entry(
+                f"Zone {zone_id}", "System", f"Zone '{zone_name}' deleted"
+            )
 
     def toggle_zone(self):
+        """Toggle zone armed/disarmed status."""
         selected = self.zones_tree.selection()
         if not selected:
-            messagebox.showinfo("No Selection", "Please select a zone to arm/disarm")
+            messagebox.showinfo(
+                "No Selection", "Please select a zone to arm/disarm"
+            )
             return
 
         item = self.zones_tree.item(selected[0])
@@ -250,9 +342,14 @@ class SecurityPanel(ttk.Frame):
             zone["armed"] = not zone["armed"]
             action = "Armed" if zone["armed"] else "Disarmed"
             self.refresh_zones_display()
-            self.add_log_entry(f"Zone {zone_id}", "System", f"Zone '{zone_name}' {action.lower()}")
+            self.add_log_entry(
+                f"Zone {zone_id}",
+                "System",
+                f"Zone '{zone_name}' {action.lower()}",
+            )
 
     def refresh_zones_display(self):
+        """Refresh the zones display."""
         for item in self.zones_tree.get_children():
             self.zones_tree.delete(item)
 
@@ -266,6 +363,7 @@ class SecurityPanel(ttk.Frame):
             )
 
     def add_log_entry(self, zone, sensor, event):
+        """Add an entry to the intrusion log."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.intrusion_log.insert(0, (timestamp, str(zone), str(sensor), event))
         if len(self.intrusion_log) > 100:
@@ -273,6 +371,7 @@ class SecurityPanel(ttk.Frame):
         self.refresh_log_display()
 
     def refresh_log_display(self):
+        """Refresh the log display."""
         for item in self.log_tree.get_children():
             self.log_tree.delete(item)
 

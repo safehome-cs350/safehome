@@ -1,3 +1,5 @@
+"""Tests for main application."""
+
 import tkinter as tk
 from unittest.mock import Mock, patch
 
@@ -7,6 +9,8 @@ from frontend.main import SafeHomeApp
 
 
 class TestSafeHomeApp:
+    """Test cases for SafeHomeApp class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -14,9 +18,9 @@ class TestSafeHomeApp:
         with patch("frontend.main.LoginWindow") as mock_login:
             app = SafeHomeApp()
 
-            assert app.is_logged_in == False
-            assert app.current_user == None
-            assert app.dashboard == None
+            assert not app.is_logged_in
+            assert app.current_user is None
+            assert app.dashboard is None
             mock_login.assert_called_once()
 
             app.root.destroy()
@@ -31,7 +35,7 @@ class TestSafeHomeApp:
             with patch("frontend.main.MainDashboard") as mock_dashboard:
                 app.on_login_success("test_user")
 
-                assert app.is_logged_in == True
+                assert app.is_logged_in
                 assert app.current_user == "test_user"
                 mock_dashboard.assert_called_once()
 
@@ -48,9 +52,9 @@ class TestSafeHomeApp:
 
             app.logout()
 
-            assert app.is_logged_in == False
-            assert app.current_user == None
-            assert app.dashboard == None
+            assert not app.is_logged_in
+            assert app.current_user is None
+            assert app.dashboard is None
             mock_login.assert_called()
 
             app.root.destroy()
@@ -70,7 +74,9 @@ class TestSafeHomeApp:
                 app.on_login_success("test_user")
                 app.update_status("Test message")
 
-                mock_dashboard.update_status.assert_called_once_with("Test message")
+                mock_dashboard.update_status.assert_called_once_with(
+                    "Test message"
+                )
 
             app.root.destroy()
 

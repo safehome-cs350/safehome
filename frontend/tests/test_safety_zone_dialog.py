@@ -1,3 +1,5 @@
+"""Tests for safety zone dialog."""
+
 import tkinter as tk
 from unittest.mock import patch
 
@@ -7,6 +9,8 @@ from frontend.safety_zone_dialog import SafetyZoneDialog
 
 
 class TestSafetyZoneDialog:
+    """Test cases for SafetyZoneDialog class."""
+
     def test_init_create_mode(self):
         root = tk.Tk()
         root.withdraw()
@@ -14,7 +18,7 @@ class TestSafetyZoneDialog:
         dialog = SafetyZoneDialog(root, None)
 
         assert dialog.title() == "Create Safety Zone"
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -22,7 +26,11 @@ class TestSafetyZoneDialog:
         root = tk.Tk()
         root.withdraw()
 
-        zone_data = {"name": "Test Zone", "sensors": ["Door Sensor 1"], "armed": False}
+        zone_data = {
+            "name": "Test Zone",
+            "sensors": ["Door Sensor 1"],
+            "armed": False,
+        }
 
         dialog = SafetyZoneDialog(root, zone_data)
 
@@ -53,7 +61,7 @@ class TestSafetyZoneDialog:
         dialog.ok_clicked()
 
         mock_messagebox.showerror.assert_called_once()
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -67,7 +75,7 @@ class TestSafetyZoneDialog:
         dialog.ok_clicked()
 
         mock_messagebox.showerror.assert_called_once()
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -81,10 +89,10 @@ class TestSafetyZoneDialog:
 
         dialog.ok_clicked()
 
-        assert dialog.result != None
+        assert dialog.result is not None
         assert dialog.result["name"] == "Test Zone"
         assert len(dialog.result["sensors"]) > 0
-        assert dialog.result["armed"] == False
+        assert not dialog.result["armed"]
 
         root.destroy()
 
@@ -95,6 +103,6 @@ class TestSafetyZoneDialog:
         dialog = SafetyZoneDialog(root, None)
         dialog.cancel_clicked()
 
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()

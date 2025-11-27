@@ -1,12 +1,19 @@
+"""Tests for configuration panel."""
+
 import tkinter as tk
 from unittest.mock import Mock, patch
 
 import pytest
 
-from frontend.configuration_panel import ConfigurationPanel, PasswordChangeDialog
+from frontend.configuration_panel import (
+    ConfigurationPanel,
+    PasswordChangeDialog,
+)
 
 
 class TestConfigurationPanel:
+    """Test cases for ConfigurationPanel class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -30,7 +37,9 @@ class TestConfigurationPanel:
 
         panel = ConfigurationPanel(root, app)
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             mock_messagebox.askyesno.return_value = True
             panel.turn_system_on()
 
@@ -49,7 +58,9 @@ class TestConfigurationPanel:
 
         panel = ConfigurationPanel(root, app)
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             mock_messagebox.askyesno.return_value = True
             panel.turn_system_off()
 
@@ -69,7 +80,9 @@ class TestConfigurationPanel:
         panel = ConfigurationPanel(root, app)
         panel.settings["system_name"] = "Custom Name"
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             mock_messagebox.askyesno.return_value = True
             panel.reset_system()
 
@@ -91,7 +104,9 @@ class TestConfigurationPanel:
         panel.delay_time_var.set("45")
         panel.phone_number_var.set("555-9999")
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             panel.save_settings()
 
             assert panel.settings["system_name"] == "New System Name"
@@ -111,7 +126,9 @@ class TestConfigurationPanel:
         panel = ConfigurationPanel(root, app)
         panel.delay_time_var.set("invalid")
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             panel.save_settings()
 
             mock_messagebox.showerror.assert_called_once()
@@ -129,7 +146,9 @@ class TestConfigurationPanel:
         original_name = panel.settings["system_name"]
         panel.system_name_var.set("Changed Name")
 
-        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+        with patch(
+            "frontend.configuration_panel.messagebox"
+        ) as mock_messagebox:
             panel.cancel_changes()
 
             assert panel.system_name_var.get() == original_name
@@ -139,6 +158,8 @@ class TestConfigurationPanel:
 
 
 class TestPasswordChangeDialog:
+    """Test cases for PasswordChangeDialog class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -146,7 +167,7 @@ class TestPasswordChangeDialog:
         dialog = PasswordChangeDialog(root, "Master Password")
 
         assert dialog.title() == "Change Master Password"
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -172,7 +193,7 @@ class TestPasswordChangeDialog:
         dialog.ok_clicked()
 
         mock_messagebox.showerror.assert_called_once()
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -189,7 +210,7 @@ class TestPasswordChangeDialog:
         dialog.ok_clicked()
 
         mock_messagebox.showerror.assert_called_once()
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -206,7 +227,7 @@ class TestPasswordChangeDialog:
         dialog.ok_clicked()
 
         mock_messagebox.showerror.assert_called_once()
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()
 
@@ -232,6 +253,6 @@ class TestPasswordChangeDialog:
         dialog = PasswordChangeDialog(root, "Master Password")
         dialog.cancel_clicked()
 
-        assert dialog.result == None
+        assert dialog.result is None
 
         root.destroy()

@@ -1,3 +1,5 @@
+"""Tests for surveillance panel."""
+
 import tkinter as tk
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
@@ -8,6 +10,8 @@ from frontend.surveillance_panel import SurveillancePanel
 
 
 class TestSurveillancePanel:
+    """Test cases for SurveillancePanel class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -18,7 +22,7 @@ class TestSurveillancePanel:
         assert panel.app == app
         assert isinstance(panel.project_root, Path)
         assert len(panel.cameras) == 3
-        assert panel.current_camera == None
+        assert panel.current_camera is None
         assert panel.zoom_level == 1.0
 
         root.destroy()
@@ -135,7 +139,7 @@ class TestSurveillancePanel:
 
         panel.enable_camera()
 
-        assert panel.cameras[3]["enabled"] == True
+        assert panel.cameras[3]["enabled"]
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
@@ -155,7 +159,7 @@ class TestSurveillancePanel:
 
         panel.disable_camera()
 
-        assert panel.cameras[1]["enabled"] == False
+        assert not panel.cameras[1]["enabled"]
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
@@ -199,7 +203,7 @@ class TestSurveillancePanel:
 
         panel.delete_camera_password()
 
-        assert panel.cameras[3]["password"] == None
+        assert panel.cameras[3]["password"] is None
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()

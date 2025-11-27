@@ -1,10 +1,15 @@
+"""Login window for SafeHome system."""
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 
 class LoginWindow(tk.Toplevel):
+    """Login window dialog."""
+
 
     def __init__(self, parent, on_success_callback):
+        """Initialize the login window."""
         super().__init__(parent)
         self.on_success = on_success_callback
 
@@ -20,7 +25,9 @@ class LoginWindow(tk.Toplevel):
         main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        title_label = ttk.Label(main_frame, text="SafeHome System", style="Title.TLabel")
+        title_label = ttk.Label(
+            main_frame, text="SafeHome System", style="Title.TLabel"
+        )
         title_label.pack(pady=(0, 30))
 
         ttk.Label(main_frame, text="Username:").pack(anchor=tk.W, pady=(0, 5))
@@ -38,12 +45,15 @@ class LoginWindow(tk.Toplevel):
         login_button.pack(pady=(0, 10))
 
         self.password_entry.bind("<Return>", lambda e: self.handle_login())
-        self.username_entry.bind("<Return>", lambda e: self.password_entry.focus())
+        self.username_entry.bind(
+            "<Return>", lambda e: self.password_entry.focus()
+        )
 
         self.default_username = "admin"
         self.default_password = "admin123"
 
     def center_window(self):
+        """Center the window on the screen."""
         self.update_idletasks()
         width = self.winfo_width()
         height = self.winfo_height()
@@ -52,14 +62,20 @@ class LoginWindow(tk.Toplevel):
         self.geometry(f"{width}x{height}+{x}+{y}")
 
     def handle_login(self):
+        """Handle login button click and validate credentials."""
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
 
         if not username or not password:
-            messagebox.showerror("Login Error", "Please enter both username and password")
+            messagebox.showerror(
+                "Login Error", "Please enter both username and password"
+            )
             return
 
-        if username == self.default_username and password == self.default_password:
+        if (
+            username == self.default_username
+            and password == self.default_password
+        ):
             self.destroy()
             self.on_success(username)
         else:

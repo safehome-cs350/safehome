@@ -1,3 +1,5 @@
+"""Tests for main dashboard."""
+
 import tkinter as tk
 from unittest.mock import Mock
 
@@ -7,6 +9,8 @@ from frontend.main_dashboard import MainDashboard
 
 
 class TestMainDashboard:
+    """Test cases for MainDashboard class."""
+
     def test_init(self):
         root = tk.Tk()
         root.withdraw()
@@ -30,13 +34,16 @@ class TestMainDashboard:
         dashboard = MainDashboard(root, app)
 
         dashboard.show_panel("security")
-        assert dashboard.content_notebook.index(dashboard.content_notebook.select()) == 0
+        selected = dashboard.content_notebook.select()
+        assert dashboard.content_notebook.index(selected) == 0
 
         dashboard.show_panel("surveillance")
-        assert dashboard.content_notebook.index(dashboard.content_notebook.select()) == 1
+        selected = dashboard.content_notebook.select()
+        assert dashboard.content_notebook.index(selected) == 1
 
         dashboard.show_panel("configuration")
-        assert dashboard.content_notebook.index(dashboard.content_notebook.select()) == 2
+        selected = dashboard.content_notebook.select()
+        assert dashboard.content_notebook.index(selected) == 2
 
         root.destroy()
 
