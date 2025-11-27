@@ -11,6 +11,7 @@ class TestSurveillancePanel:
     """Test cases for SurveillancePanel class."""
 
     def test_init(self):
+        """Test SurveillancePanel initialization."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -26,6 +27,7 @@ class TestSurveillancePanel:
         root.destroy()
 
     def test_refresh_camera_list(self):
+        """Test refreshing camera list."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -40,6 +42,7 @@ class TestSurveillancePanel:
         root.destroy()
 
     def test_adjust_zoom(self):
+        """Test zoom adjustment."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -56,6 +59,7 @@ class TestSurveillancePanel:
         root.destroy()
 
     def test_reset_zoom(self):
+        """Test zoom reset."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -72,6 +76,7 @@ class TestSurveillancePanel:
         root.destroy()
 
     def test_adjust_pan(self):
+        """Test pan adjustment."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -92,6 +97,7 @@ class TestSurveillancePanel:
         root.destroy()
 
     def test_reset_pan(self):
+        """Test pan reset."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -110,6 +116,7 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     def test_enable_camera_no_selection(self, mock_messagebox):
+        """Test enabling camera with no selection."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -124,6 +131,7 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     def test_enable_camera_success(self, mock_messagebox):
+        """Test successful camera enable."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -144,6 +152,7 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     def test_disable_camera_success(self, mock_messagebox):
+        """Test successful camera disable."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -165,6 +174,7 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     def test_set_camera_password(self, mock_messagebox, mock_simpledialog):
+        """Test setting camera password."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -186,6 +196,7 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     def test_delete_camera_password(self, mock_messagebox):
+        """Test deleting camera password."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()

@@ -10,6 +10,7 @@ class TestConfigurationPanel:
     """Test cases for ConfigurationPanel class."""
 
     def test_init(self):
+        """Test ConfigurationPanel initialization."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -25,6 +26,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_turn_system_on(self):
+        """Test turning system on."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -44,6 +46,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_turn_system_off(self):
+        """Test turning system off."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -63,6 +66,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_reset_system(self):
+        """Test system reset."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -83,6 +87,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_save_settings(self):
+        """Test saving settings."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -105,6 +110,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_save_settings_invalid_delay(self):
+        """Test saving settings with invalid delay time."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -122,6 +128,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_cancel_changes(self):
+        """Test canceling changes."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -144,6 +151,7 @@ class TestPasswordChangeDialog:
     """Test cases for PasswordChangeDialog class."""
 
     def test_init(self):
+        """Test PasswordChangeDialog initialization."""
         root = tk.Tk()
         root.withdraw()
 
@@ -155,6 +163,7 @@ class TestPasswordChangeDialog:
         root.destroy()
 
     def test_center_window(self):
+        """Test window centering."""
         root = tk.Tk()
         root.withdraw()
 
@@ -169,6 +178,7 @@ class TestPasswordChangeDialog:
 
     @patch("frontend.configuration_panel.messagebox")
     def test_ok_clicked_empty_fields(self, mock_messagebox):
+        """Test OK click with empty fields."""
         root = tk.Tk()
         root.withdraw()
 
@@ -182,6 +192,7 @@ class TestPasswordChangeDialog:
 
     @patch("frontend.configuration_panel.messagebox")
     def test_ok_clicked_password_mismatch(self, mock_messagebox):
+        """Test OK click with password mismatch."""
         root = tk.Tk()
         root.withdraw()
 
@@ -199,6 +210,7 @@ class TestPasswordChangeDialog:
 
     @patch("frontend.configuration_panel.messagebox")
     def test_ok_clicked_short_password(self, mock_messagebox):
+        """Test OK click with short password."""
         root = tk.Tk()
         root.withdraw()
 
@@ -215,6 +227,7 @@ class TestPasswordChangeDialog:
         root.destroy()
 
     def test_ok_clicked_success(self):
+        """Test successful password change."""
         root = tk.Tk()
         root.withdraw()
 
@@ -230,6 +243,7 @@ class TestPasswordChangeDialog:
         root.destroy()
 
     def test_cancel_clicked(self):
+        """Test cancel button click."""
         root = tk.Tk()
         root.withdraw()
 

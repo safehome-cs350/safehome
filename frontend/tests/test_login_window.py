@@ -10,6 +10,7 @@ class TestLoginWindow:
     """Test cases for LoginWindow class."""
 
     def test_init(self):
+        """Test LoginWindow initialization."""
         root = tk.Tk()
         root.withdraw()
         callback = Mock()
@@ -23,6 +24,7 @@ class TestLoginWindow:
         root.destroy()
 
     def test_center_window(self):
+        """Test window centering."""
         root = tk.Tk()
         root.withdraw()
         callback = Mock()
@@ -37,6 +39,7 @@ class TestLoginWindow:
 
     @patch("frontend.login_window.messagebox")
     def test_handle_login_empty_fields(self, mock_messagebox):
+        """Test login with empty fields."""
         root = tk.Tk()
         root.withdraw()
         callback = Mock()
@@ -51,6 +54,7 @@ class TestLoginWindow:
 
     @patch("frontend.login_window.messagebox")
     def test_handle_login_invalid_credentials(self, mock_messagebox):
+        """Test login with invalid credentials."""
         root = tk.Tk()
         root.withdraw()
         callback = Mock()
@@ -68,6 +72,7 @@ class TestLoginWindow:
 
     @patch("frontend.login_window.messagebox")
     def test_handle_login_success(self, mock_messagebox):
+        """Test successful login."""
         root = tk.Tk()
         root.withdraw()
         callback = Mock()

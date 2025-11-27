@@ -10,6 +10,7 @@ class TestSecurityPanel:
     """Test cases for SecurityPanel class."""
 
     def test_init(self):
+        """Test SecurityPanel initialization."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -26,6 +27,7 @@ class TestSecurityPanel:
         root.destroy()
 
     def test_initialize_sample_data(self):
+        """Test sample data initialization."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -42,6 +44,7 @@ class TestSecurityPanel:
 
     @patch("frontend.security_panel.messagebox")
     def test_arm_system(self, mock_messagebox):
+        """Test arming the system."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -61,6 +64,7 @@ class TestSecurityPanel:
 
     @patch("frontend.security_panel.messagebox")
     def test_disarm_system(self, mock_messagebox):
+        """Test disarming the system."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -82,6 +86,7 @@ class TestSecurityPanel:
         root.destroy()
 
     def test_add_log_entry(self):
+        """Test adding log entry."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -99,6 +104,7 @@ class TestSecurityPanel:
         root.destroy()
 
     def test_refresh_zones_display(self):
+        """Test refreshing zones display."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -114,6 +120,7 @@ class TestSecurityPanel:
         root.destroy()
 
     def test_refresh_log_display(self):
+        """Test refreshing log display."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -131,6 +138,7 @@ class TestSecurityPanel:
 
     @patch("frontend.security_panel.messagebox")
     def test_trigger_panic(self, mock_messagebox):
+        """Test panic alarm trigger."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -151,6 +159,7 @@ class TestSecurityPanel:
 
     @patch("frontend.security_panel.messagebox")
     def test_call_monitoring_service(self, mock_messagebox):
+        """Test calling monitoring service."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()

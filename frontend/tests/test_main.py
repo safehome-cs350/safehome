@@ -10,6 +10,7 @@ class TestSafeHomeApp:
     """Test cases for SafeHomeApp class."""
 
     def test_init(self):
+        """Test SafeHomeApp initialization."""
         root = tk.Tk()
         root.withdraw()
 
@@ -24,6 +25,7 @@ class TestSafeHomeApp:
             app.root.destroy()
 
     def test_on_login_success(self):
+        """Test successful login handling."""
         root = tk.Tk()
         root.withdraw()
 
@@ -40,6 +42,7 @@ class TestSafeHomeApp:
             app.root.destroy()
 
     def test_logout(self):
+        """Test logout functionality."""
         root = tk.Tk()
         root.withdraw()
 
@@ -58,6 +61,7 @@ class TestSafeHomeApp:
             app.root.destroy()
 
     def test_update_status(self):
+        """Test status update with dashboard."""
         root = tk.Tk()
         root.withdraw()
 
@@ -77,6 +81,7 @@ class TestSafeHomeApp:
             app.root.destroy()
 
     def test_update_status_no_dashboard(self):
+        """Test status update without dashboard."""
         root = tk.Tk()
         root.withdraw()
 

@@ -10,6 +10,7 @@ class TestSafetyZoneDialog:
     """Test cases for SafetyZoneDialog class."""
 
     def test_init_create_mode(self):
+        """Test dialog initialization in create mode."""
         root = tk.Tk()
         root.withdraw()
 
@@ -21,6 +22,7 @@ class TestSafetyZoneDialog:
         root.destroy()
 
     def test_init_edit_mode(self):
+        """Test dialog initialization in edit mode."""
         root = tk.Tk()
         root.withdraw()
 
@@ -38,6 +40,7 @@ class TestSafetyZoneDialog:
         root.destroy()
 
     def test_center_window(self):
+        """Test window centering."""
         root = tk.Tk()
         root.withdraw()
 
@@ -52,6 +55,7 @@ class TestSafetyZoneDialog:
 
     @patch("frontend.safety_zone_dialog.messagebox")
     def test_ok_clicked_empty_name(self, mock_messagebox):
+        """Test OK click with empty name."""
         root = tk.Tk()
         root.withdraw()
 
@@ -65,6 +69,7 @@ class TestSafetyZoneDialog:
 
     @patch("frontend.safety_zone_dialog.messagebox")
     def test_ok_clicked_no_sensors(self, mock_messagebox):
+        """Test OK click with no sensors selected."""
         root = tk.Tk()
         root.withdraw()
 
@@ -78,6 +83,7 @@ class TestSafetyZoneDialog:
         root.destroy()
 
     def test_ok_clicked_success(self):
+        """Test successful zone creation."""
         root = tk.Tk()
         root.withdraw()
 
@@ -95,6 +101,7 @@ class TestSafetyZoneDialog:
         root.destroy()
 
     def test_cancel_clicked(self):
+        """Test cancel button click."""
         root = tk.Tk()
         root.withdraw()
 

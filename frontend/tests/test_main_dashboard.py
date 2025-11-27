@@ -10,6 +10,7 @@ class TestMainDashboard:
     """Test cases for MainDashboard class."""
 
     def test_init(self):
+        """Test MainDashboard initialization."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -24,6 +25,7 @@ class TestMainDashboard:
         root.destroy()
 
     def test_show_panel(self):
+        """Test panel switching."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -46,6 +48,7 @@ class TestMainDashboard:
         root.destroy()
 
     def test_update_status(self):
+        """Test status bar update."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
