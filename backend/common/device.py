@@ -31,7 +31,7 @@ class SafetyZone:
 @dataclass
 class CameraInfo:
     """Camera information."""
-    
+
     camera_id: int
     name: str
     location: str
@@ -40,10 +40,10 @@ class CameraInfo:
     has_password: bool = False
 
 
-@dataclass 
+@dataclass
 class SensorInfo:
     """Sensor information."""
-    
+
     sensor_id: int
     sensor_type: str  # "motion" or "windoor"
     location: str
@@ -55,41 +55,41 @@ class SensorInfo:
 @dataclass
 class CameraDB:
     """Camera database class."""
-    
+
     cameras = {
         1: CameraInfo(
             camera_id=1,
             name="거실 카메라",
             location="거실",
             is_enabled=True,
-            has_password=False
+            has_password=False,
         ),
         2: CameraInfo(
             camera_id=2,
-            name="현관 카메라", 
+            name="현관 카메라",
             location="현관",
             is_enabled=True,
-            has_password=True
+            has_password=True,
         ),
         3: CameraInfo(
             camera_id=3,
             name="침실 카메라",
             location="침실",
             is_enabled=False,
-            has_password=False
+            has_password=False,
         ),
     }
-    
+
     @classmethod
     def get_camera(cls, camera_id: int) -> CameraInfo | None:
         """Get camera by ID."""
         return cls.cameras.get(camera_id)
-    
+
     @classmethod
     def get_all_cameras(cls) -> list[CameraInfo]:
         """Get all cameras."""
         return list(cls.cameras.values())
-    
+
     @classmethod
     def update_camera(cls, camera_id: int, **kwargs) -> bool:
         """Update camera configuration."""
@@ -104,45 +104,45 @@ class CameraDB:
 @dataclass
 class SensorDB:
     """Sensor database class."""
-    
+
     motion_sensors = {
         1: SensorInfo(sensor_id=1, sensor_type="motion", location="거실"),
         2: SensorInfo(sensor_id=2, sensor_type="motion", location="현관"),
         3: SensorInfo(sensor_id=3, sensor_type="motion", location="침실"),
     }
-    
+
     windoor_sensors = {
         1: SensorInfo(sensor_id=1, sensor_type="windoor", location="정문"),
         2: SensorInfo(sensor_id=2, sensor_type="windoor", location="뒷문"),
         3: SensorInfo(sensor_id=3, sensor_type="windoor", location="거실 창문"),
         4: SensorInfo(sensor_id=4, sensor_type="windoor", location="침실 창문"),
     }
-    
+
     @classmethod
     def get_motion_sensor(cls, sensor_id: int) -> SensorInfo | None:
         """Get motion sensor by ID."""
         return cls.motion_sensors.get(sensor_id)
-    
+
     @classmethod
     def get_windoor_sensor(cls, sensor_id: int) -> SensorInfo | None:
         """Get windoor sensor by ID."""
         return cls.windoor_sensors.get(sensor_id)
-    
+
     @classmethod
     def get_all_motion_sensors(cls) -> list[SensorInfo]:
         """Get all motion sensors."""
         return list(cls.motion_sensors.values())
-    
+
     @classmethod
     def get_all_windoor_sensors(cls) -> list[SensorInfo]:
         """Get all windoor sensors."""
         return list(cls.windoor_sensors.values())
-    
+
     @classmethod
     def get_all_sensors(cls) -> list[SensorInfo]:
         """Get all sensors (motion + windoor)."""
         return cls.get_all_motion_sensors() + cls.get_all_windoor_sensors()
-    
+
     @classmethod
     def update_motion_sensor(cls, sensor_id: int, **kwargs) -> bool:
         """Update motion sensor configuration."""
@@ -152,8 +152,8 @@ class SensorDB:
                     setattr(cls.motion_sensors[sensor_id], key, value)
             return True
         return False
-    
-    @classmethod  
+
+    @classmethod
     def update_windoor_sensor(cls, sensor_id: int, **kwargs) -> bool:
         """Update windoor sensor configuration."""
         if sensor_id in cls.windoor_sensors:
