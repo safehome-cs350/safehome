@@ -139,11 +139,6 @@ class SensorDB:
         return list(cls.windoor_sensors.values())
 
     @classmethod
-    def get_all_sensors(cls) -> list[SensorInfo]:
-        """Get all sensors (motion + windoor)."""
-        return cls.get_all_motion_sensors() + cls.get_all_windoor_sensors()
-
-    @classmethod
     def update_motion_sensor(cls, sensor_id: int, **kwargs) -> bool:
         """Update motion sensor configuration."""
         if sensor_id in cls.motion_sensors:

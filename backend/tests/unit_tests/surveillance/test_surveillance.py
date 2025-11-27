@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import app
+from backend.common.device import CameraDB, SensorDB
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent.parent
@@ -714,3 +715,18 @@ class TestErrorHandling:
             # messages.append(f"Zoom limit reached at {current_zoom}")
             # (Zoom limit reached at current_zoom)
             assert "Zoom limit reached" in data["message"]
+
+    def test_update_camera_not_found(self):
+        """Test update_camera returns False for non-existent camera."""
+        result = CameraDB.update_camera(999, is_enabled=True)
+        assert result is False
+
+    def test_update_motion_sensor_not_found(self):
+        """Test update_motion_sensor returns False for non-existent sensor."""
+        result = SensorDB.update_motion_sensor(999, is_armed=True)
+        assert result is False
+
+    def test_update_windoor_sensor_not_found(self):
+        """Test update_windoor_sensor returns False for non-existent sensor."""
+        result = SensorDB.update_windoor_sensor(999, is_opened=True)
+        assert result is False
