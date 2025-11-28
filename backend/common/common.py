@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-from .request import ConfigRequest, LoginRequest, PowerRequest
+from .request import ConfigRequest, GetConfigRequest, LoginRequest, PowerRequest
 from .user import UserDB
 
 router = APIRouter()
@@ -86,6 +86,30 @@ def config(request: ConfigRequest):
         user.phone_number = request.phone_number
 
     return {"message": "Configuration updated successfully"}
+
+
+@router.get(
+    "/config/",
+    summary="UC1.c. Get system configuration.",
+    responses={
+        401: {
+            "description": "Invalid user ID",
+        }
+    },
+)
+def get_config(request: GetConfigRequest):
+    """UC1.c. Get system configuration."""
+    user = UserDB.find_user_by_id(request.user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user ID")
+    return {
+        "password1": user.password1,
+        "password2": user.password2,
+        "master_password": user.master_password,
+        "guest_password": user.guest_password,
+        "delay_time": user.delay_time,
+        "phone_number": user.phone_number,
+    }
 
 
 @router.post(

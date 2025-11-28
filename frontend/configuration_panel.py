@@ -3,6 +3,8 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from .api_client import APIClient
+
 
 class ConfigurationPanel(ttk.Frame):
     """Panel for system configuration and settings."""
@@ -11,16 +13,19 @@ class ConfigurationPanel(ttk.Frame):
         """Initialize the configuration panel."""
         super().__init__(parent)
         self.app = app
+        self.api_client = APIClient()
 
         self.settings = {
-            "master_password": "admin123",
-            "guest_password": "guest123",
-            "delay_time": 30,
-            "phone_number": "555-0100",
-            "system_name": "SafeHome System",
+            "password1": "12345678",
+            "password2": "abcdefgh",
+            "master_password": "1234",
+            "guest_password": "5678",
+            "delay_time": 300,
+            "phone_number": "01012345678",
         }
 
         self.setup_ui()
+        self.load_config()
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -31,61 +36,52 @@ class ConfigurationPanel(ttk.Frame):
         settings_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         row = 0
-        ttk.Label(settings_frame, text="System Name:").grid(
+        ttk.Label(settings_frame, text="Password 1:").grid(
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
-        self.system_name_var = tk.StringVar(value=self.settings["system_name"])
-        ttk.Entry(settings_frame, textvariable=self.system_name_var, width=30).grid(
-            row=row, column=1, pady=5, padx=5, sticky=tk.W
+        self.password1_var = tk.StringVar(value="")
+        ttk.Entry(
+            settings_frame,
+            textvariable=self.password1_var,
+            width=30,
+            show="*",
+        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
+
+        row += 1
+        ttk.Label(settings_frame, text="Password 2:").grid(
+            row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
+        self.password2_var = tk.StringVar(value="")
+        ttk.Entry(
+            settings_frame,
+            textvariable=self.password2_var,
+            width=30,
+            show="*",
+        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
         row += 1
         ttk.Label(settings_frame, text="Master Password:").grid(
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
-        password_frame = ttk.Frame(settings_frame)
-        password_frame.grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
-
-        self.master_password_var = tk.StringVar(value="********")
-        self.master_password_entry = ttk.Entry(
-            password_frame,
+        self.master_password_var = tk.StringVar(value="")
+        ttk.Entry(
+            settings_frame,
             textvariable=self.master_password_var,
-            width=25,
+            width=30,
             show="*",
-        )
-        self.master_password_entry.pack(side=tk.LEFT)
-
-        change_btn = ttk.Button(
-            password_frame,
-            text="Change",
-            command=self.change_master_password,
-            width=10,
-        )
-        change_btn.pack(side=tk.LEFT, padx=5)
+        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
         row += 1
         ttk.Label(settings_frame, text="Guest Password:").grid(
             row=row, column=0, sticky=tk.W, pady=5, padx=5
         )
-        guest_password_frame = ttk.Frame(settings_frame)
-        guest_password_frame.grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
-
-        self.guest_password_var = tk.StringVar(value="********")
-        self.guest_password_entry = ttk.Entry(
-            guest_password_frame,
+        self.guest_password_var = tk.StringVar(value="")
+        ttk.Entry(
+            settings_frame,
             textvariable=self.guest_password_var,
-            width=25,
+            width=30,
             show="*",
-        )
-        self.guest_password_entry.pack(side=tk.LEFT)
-
-        change_guest_btn = ttk.Button(
-            guest_password_frame,
-            text="Change",
-            command=self.change_guest_password,
-            width=10,
-        )
-        change_guest_btn.pack(side=tk.LEFT, padx=5)
+        ).grid(row=row, column=1, pady=5, padx=5, sticky=tk.W)
 
         row += 1
         ttk.Label(settings_frame, text="Delay Time (seconds):").grid(
@@ -168,171 +164,187 @@ class ConfigurationPanel(ttk.Frame):
 
         save_btn = ttk.Button(
             button_frame,
-            text="Save Settings",
+            text="Save Changes",
             command=self.save_settings,
             width=20,
         )
         save_btn.pack(side=tk.LEFT, padx=5)
-        cancel_btn = ttk.Button(
-            button_frame, text="Cancel", command=self.cancel_changes, width=20
-        )
-        cancel_btn.pack(side=tk.LEFT, padx=5)
 
-    def change_master_password(self):
-        """Open dialog to change master password."""
-        dialog = PasswordChangeDialog(self, "Master Password")
-        if dialog.result:
-            self.settings["master_password"] = dialog.result
-            messagebox.showinfo("Success", "Master password changed successfully")
+    def load_config(self):
+        """Load current user's configuration from the backend."""
+        try:
+            config = self.api_client.get_config(self.app.current_user)
+            password1 = config.get("password1", "")
+            password2 = config.get("password2", "")
+            master_password = config.get("master_password", "")
+            guest_password = config.get("guest_password", "")
 
-    def change_guest_password(self):
-        """Open dialog to change guest password."""
-        dialog = PasswordChangeDialog(self, "Guest Password")
-        if dialog.result:
-            self.settings["guest_password"] = dialog.result
-            messagebox.showinfo("Success", "Guest password changed successfully")
+            self.password1_var.set("********" if password1 else "")
+            self.password2_var.set("********" if password2 else "")
+            self.master_password_var.set("********" if master_password else "")
+            self.guest_password_var.set("********" if guest_password else "")
+            self.delay_time_var.set(str(config.get("delay_time", 300)))
+            phone_number = config.get("phone_number", "")
+            self.phone_number_var.set(phone_number if phone_number else "")
+
+            self.settings["delay_time"] = config.get("delay_time", 300)
+            self.settings["phone_number"] = phone_number if phone_number else ""
+        except Exception:
+            # Fields will remain with default/empty values
+            pass
 
     def turn_system_on(self):
         """Turn the system on."""
+        if not self.app.current_user:
+            messagebox.showerror("Error", "No user logged in")
+            return
+
         result = messagebox.askyesno(
             "Turn System On", "Are you sure you want to turn the system on?"
         )
         if result:
-            self.system_power_var.set("ON")
-            messagebox.showinfo("Success", "System turned on")
-            self.app.update_status("System turned on")
+            try:
+                self.api_client.power_on(self.app.current_user)
+                self.system_power_var.set("ON")
+                messagebox.showinfo("Success", "System turned on")
+                self.app.update_status("System turned on")
+            except Exception as e:
+                error_message = str(e)
+                if "Connection" in error_message or "refused" in error_message.lower():
+                    error_message = (
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running."
+                    )
+                messagebox.showerror(
+                    "Error", f"Failed to turn system on: {error_message}"
+                )
 
     def turn_system_off(self):
         """Turn the system off."""
+        if not self.app.current_user:
+            messagebox.showerror("Error", "No user logged in")
+            return
+
         result = messagebox.askyesno(
             "Turn System Off", "Are you sure you want to turn the system off?"
         )
         if result:
-            self.system_power_var.set("OFF")
-            messagebox.showinfo("Success", "System turned off")
-            self.app.update_status("System turned off")
+            try:
+                self.api_client.power_off(self.app.current_user)
+                self.system_power_var.set("OFF")
+                messagebox.showinfo("Success", "System turned off")
+                self.app.update_status("System turned off")
+            except Exception as e:
+                error_message = str(e)
+                if "Connection" in error_message or "refused" in error_message.lower():
+                    error_message = (
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running."
+                    )
+                messagebox.showerror(
+                    "Error", f"Failed to turn system off: {error_message}"
+                )
 
     def reset_system(self):
         """Reset system to default settings."""
+        if not self.app.current_user:
+            messagebox.showerror("Error", "No user logged in")
+            return
+
         result = messagebox.askyesno(
             "Reset System",
             "This will reset all system settings to defaults. Are you sure?",
         )
         if result:
-            self.settings = {
-                "master_password": "admin123",
-                "guest_password": "guest123",
-                "delay_time": 30,
-                "phone_number": "555-0100",
-                "system_name": "SafeHome System",
-            }
+            try:
+                default_values = {
+                    "password1": "12345678",
+                    "password2": "abcdefgh",
+                    "master_password": "1234",
+                    "guest_password": "5678",
+                    "delay_time": 300,
+                    "phone_number": "01012345678",
+                }
 
-            self.system_name_var.set(self.settings["system_name"])
-            self.delay_time_var.set(str(self.settings["delay_time"]))
-            self.phone_number_var.set(self.settings["phone_number"])
-            self.system_power_var.set("ON")
+                self.api_client.config(
+                    user_id=self.app.current_user,
+                    password1=default_values["password1"],
+                    password2=default_values["password2"],
+                    master_password=default_values["master_password"],
+                    guest_password=default_values["guest_password"],
+                    delay_time=default_values["delay_time"],
+                    phone_number=default_values["phone_number"],
+                )
 
-            messagebox.showinfo("Success", "System reset to default settings")
-            self.app.update_status("System reset to defaults")
+                self.settings = default_values.copy()
+                self.load_config()
+
+                messagebox.showinfo("Success", "System reset to default settings")
+                self.app.update_status("System reset to defaults")
+            except Exception as e:
+                error_message = str(e)
+                if "Connection" in error_message or "refused" in error_message.lower():
+                    error_message = (
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running."
+                    )
+                messagebox.showerror(
+                    "Error", f"Failed to reset system: {error_message}"
+                )
 
     def save_settings(self):
         """Save current settings."""
+        if not self.app.current_user:
+            messagebox.showerror("Error", "No user logged in")
+            return
+
         try:
             delay_time = int(self.delay_time_var.get())
-            if delay_time < 0:
-                raise ValueError("Delay time must be positive")
+            if delay_time < 300:
+                raise ValueError("Delay time must be at least 300 seconds")
 
-            self.settings["system_name"] = self.system_name_var.get()
-            self.settings["delay_time"] = delay_time
-            self.settings["phone_number"] = self.phone_number_var.get()
+            phone_number = self.phone_number_var.get().strip()
+            password1 = self.password1_var.get().strip()
+            password2 = self.password2_var.get().strip()
+            master_password = self.master_password_var.get().strip()
+            guest_password = self.guest_password_var.get().strip()
+
+            config_params = {
+                "user_id": self.app.current_user,
+                "delay_time": delay_time,
+            }
+
+            if phone_number:
+                config_params["phone_number"] = phone_number
+
+            # Only include passwords if they've been changed
+            if password1 and password1 != "********":
+                config_params["password1"] = password1
+            if password2 and password2 != "********":
+                config_params["password2"] = password2
+            if master_password and master_password != "********":
+                config_params["master_password"] = master_password
+            if guest_password and guest_password != "********":
+                config_params["guest_password"] = guest_password
+
+            self.api_client.config(**config_params)
+            self.load_config()
 
             messagebox.showinfo("Success", "Settings saved successfully")
             self.app.update_status("Settings saved")
         except ValueError as e:
             messagebox.showerror("Error", f"Invalid input: {e}")
-
-    def cancel_changes(self):
-        """Cancel changes and revert to saved settings."""
-        self.system_name_var.set(self.settings["system_name"])
-        self.delay_time_var.set(str(self.settings["delay_time"]))
-        self.phone_number_var.set(self.settings["phone_number"])
-        messagebox.showinfo("Info", "Changes cancelled")
-
-
-class PasswordChangeDialog(tk.Toplevel):
-    """Dialog for changing passwords."""
-
-    def __init__(self, parent, password_type):
-        """Initialize the password change dialog."""
-        super().__init__(parent)
-        self.result = None
-
-        self.title(f"Change {password_type}")
-        self.geometry("400x200")
-        self.resizable(False, False)
-
-        self.center_window()
-
-        self.transient(parent)
-        self.grab_set()
-
-        main_frame = ttk.Frame(self, padding=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(main_frame, text="Current Password:").pack(anchor=tk.W, pady=5)
-        self.current_password_entry = ttk.Entry(main_frame, width=30, show="*")
-        self.current_password_entry.pack(pady=(0, 15))
-
-        ttk.Label(main_frame, text="New Password:").pack(anchor=tk.W, pady=5)
-        self.new_password_entry = ttk.Entry(main_frame, width=30, show="*")
-        self.new_password_entry.pack(pady=(0, 15))
-
-        ttk.Label(main_frame, text="Confirm New Password:").pack(anchor=tk.W, pady=5)
-        self.confirm_password_entry = ttk.Entry(main_frame, width=30, show="*")
-        self.confirm_password_entry.pack(pady=(0, 20))
-
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack()
-
-        ok_btn = ttk.Button(button_frame, text="OK", command=self.ok_clicked, width=12)
-        ok_btn.pack(side=tk.LEFT, padx=5)
-        cancel_btn = ttk.Button(
-            button_frame, text="Cancel", command=self.cancel_clicked, width=12
-        )
-        cancel_btn.pack(side=tk.LEFT, padx=5)
-
-        self.current_password_entry.focus()
-
-    def center_window(self):
-        """Center the window on the screen."""
-        self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
-        x = (self.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-        self.geometry(f"{width}x{height}+{x}+{y}")
-
-    def ok_clicked(self):
-        """Handle OK button click and validate password."""
-        current = self.current_password_entry.get()
-        new = self.new_password_entry.get()
-        confirm = self.confirm_password_entry.get()
-
-        if not current or not new or not confirm:
-            messagebox.showerror("Error", "All fields are required")
-            return
-
-        if new != confirm:
-            messagebox.showerror("Error", "New passwords do not match")
-            return
-
-        if len(new) < 4:
-            messagebox.showerror("Error", "Password must be at least 4 characters")
-            return
-
-        self.result = new
-        self.destroy()
-
-    def cancel_clicked(self):
-        """Handle Cancel button click."""
-        self.destroy()
+        except Exception as e:
+            error_message = str(e)
+            if "400" in error_message and "300" in error_message:
+                messagebox.showerror("Error", "Delay time must be at least 300 seconds")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to save settings: {error_message}"
+                )

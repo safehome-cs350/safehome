@@ -9,6 +9,7 @@ dependencies = [
     "pre-commit>=4.4.0",
     "pytest",
     "httpx",
+    "requests",
     "coverage",
 ]
 
