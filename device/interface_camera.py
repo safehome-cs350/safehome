@@ -1,3 +1,5 @@
+"""Abstract interface for camera devices."""
+
 from abc import ABC, abstractmethod
 
 
