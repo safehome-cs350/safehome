@@ -1,3 +1,5 @@
+"""Camera device implementation."""
+
 import threading
 import time
 
@@ -7,47 +9,66 @@ from .interface_camera import InterfaceCamera
 
 
 class DeviceCamera(threading.Thread, InterfaceCamera):
+    """Camera device that provides pan, zoom, and view capabilities.
+
+    The camera runs in a separate thread and updates its internal time counter.
+    """
+
     RETURN_SIZE = 500
     SOURCE_SIZE = 200
 
     def __init__(self):
+        """Initialize the camera device."""
         super().__init__(daemon=True)
 
-        self.cameraId = 0
+        self.camera_id = 0
         self.time = 0
         self.pan = 0
         self.zoom = 2
-        self.imgSource = None
-        self.centerWidth = 0
-        self.centerHeight = 0
+        self.img_source = None
+        self.center_width = 0
+        self.center_height = 0
         self._running = True
         self._lock = threading.Lock()
-        # Font was previously missing; using a default PIL font prevents AttributeError in getView
+        # Font was previously missing; using a default PIL font prevents
+        # AttributeError in getView
         self.font = ImageFont.load_default()
 
         self.start()
 
     def set_id(self, id_):
-        """Set the camera ID and load associated image (synchronized)."""
+        """Set the camera ID and load associated image (synchronized).
+
+        Args:
+            id_: The camera identifier.
+        """
         with self._lock:
-            self.cameraId = id_
-            fileName = f"camera{id_}.jpg"
+            self.camera_id = id_
+            file_name = f"camera{id_}.jpg"
 
             try:
-                self.imgSource = Image.open(fileName)
-                self.centerWidth = self.imgSource.width // 2
-                self.centerHeight = self.imgSource.height // 2
+                self.img_source = Image.open(file_name)
+                self.center_width = self.img_source.width // 2
+                self.center_height = self.img_source.height // 2
             except FileNotFoundError:
-                self.imgSource = None
-                print(f"ERROR: {fileName} file open error")
+                self.img_source = None
+                print(f"ERROR: {file_name} file open error")
                 return
 
     def get_id(self):
-        """Get the camera ID."""
-        return self.cameraId
+        """Get the camera ID.
+
+        Returns:
+            int: The camera identifier.
+        """
+        return self.camera_id
 
     def get_view(self):
-        """Get the current camera view as a PIL Image (synchronized)."""
+        """Get the current camera view as a PIL Image (synchronized).
+
+        Returns:
+            PIL.Image: The current camera view image.
+        """
         with self._lock:
             view = "Time = "
             if self.time < 10:
@@ -62,53 +83,57 @@ class DeviceCamera(threading.Thread, InterfaceCamera):
                 view += f"left {-self.pan}"
 
             # Create the view image (500x500)
-            imgView = Image.new("RGB", (self.RETURN_SIZE, self.RETURN_SIZE), "black")
+            img_view = Image.new("RGB", (self.RETURN_SIZE, self.RETURN_SIZE), "black")
 
-            if self.imgSource is not None:
+            if self.img_source is not None:
                 zoomed = self.SOURCE_SIZE * (10 - self.zoom) // 10
                 panned = self.pan * self.SOURCE_SIZE // 5
 
-                left = self.centerWidth + panned - zoomed
-                top = self.centerHeight - zoomed
-                right = self.centerWidth + panned + zoomed
-                bottom = self.centerHeight + zoomed
+                left = self.center_width + panned - zoomed
+                top = self.center_height - zoomed
+                right = self.center_width + panned + zoomed
+                bottom = self.center_height + zoomed
 
                 # Crop and resize to fill the view
                 try:
-                    cropped = self.imgSource.crop((left, top, right, bottom))
+                    cropped = self.img_source.crop((left, top, right, bottom))
                     resized = cropped.resize(
                         (self.RETURN_SIZE, self.RETURN_SIZE), Image.LANCZOS
                     )
-                    imgView.paste(resized, (0, 0))
+                    img_view.paste(resized, (0, 0))
                 except Exception:
                     # If crop fails, keep black background
                     pass
 
-            draw = ImageDraw.Draw(imgView)
+            draw = ImageDraw.Draw(img_view)
 
             # Get text size
             bbox = draw.textbbox((0, 0), view, font=self.font)
-            wText = bbox[2] - bbox[0]
-            hText = bbox[3] - bbox[1]
+            w_text = bbox[2] - bbox[0]
+            h_text = bbox[3] - bbox[1]
 
             # Draw rounded rectangle background (gray)
-            rX = 0
-            rY = 0
+            r_x = 0
+            r_y = 0
             draw.rounded_rectangle(
-                [(rX, rY), (rX + wText + 10, rY + hText + 5)],
-                radius=hText // 2,
+                [(r_x, r_y), (r_x + w_text + 10, r_y + h_text + 5)],
+                radius=h_text // 2,
                 fill="gray",
             )
 
             # Draw text (cyan)
-            xText = rX + 5
-            yText = rY + 2
-            draw.text((xText, yText), view, fill="cyan", font=self.font)
+            x_text = r_x + 5
+            y_text = r_y + 2
+            draw.text((x_text, y_text), view, fill="cyan", font=self.font)
 
-            return imgView
+            return img_view
 
     def pan_right(self):
-        """Pan camera to the right (synchronized)."""
+        """Pan camera to the right (synchronized).
+
+        Returns:
+            bool: True if pan was successful, False if at maximum.
+        """
         with self._lock:
             self.pan += 1
             if self.pan > 5:
@@ -117,7 +142,11 @@ class DeviceCamera(threading.Thread, InterfaceCamera):
             return True
 
     def pan_left(self):
-        """Pan camera to the left (synchronized)."""
+        """Pan camera to the left (synchronized).
+
+        Returns:
+            bool: True if pan was successful, False if at minimum.
+        """
         with self._lock:
             self.pan -= 1
             if self.pan < -5:
@@ -126,7 +155,11 @@ class DeviceCamera(threading.Thread, InterfaceCamera):
             return True
 
     def zoom_in(self):
-        """Zoom in (synchronized)."""
+        """Zoom in (synchronized).
+
+        Returns:
+            bool: True if zoom was successful, False if at maximum.
+        """
         with self._lock:
             self.zoom += 1
             if self.zoom > 9:
@@ -135,7 +168,11 @@ class DeviceCamera(threading.Thread, InterfaceCamera):
             return True
 
     def zoom_out(self):
-        """Zoom out (synchronized)."""
+        """Zoom out (synchronized).
+
+        Returns:
+            bool: True if zoom was successful, False if at minimum.
+        """
         with self._lock:
             self.zoom -= 1
             if self.zoom < 1:

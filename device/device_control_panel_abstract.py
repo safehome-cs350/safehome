@@ -1,14 +1,23 @@
+"""Abstract base class for device control panels."""
+
 import tkinter as tk
 from abc import ABC, abstractmethod
 from tkinter import Button, Text
 
 
 class DeviceControlPanelAbstract(tk.Toplevel, ABC):
-    """None a new root must exist before creating a Toplevel; callers
+    """Abstract base class for device control panels.
+
+    Note: A new root must exist before creating a Toplevel; callers
     should create the global `tk.Tk()` first (the `main.py` runner does).
     """
 
     def __init__(self, master=None):
+        """Initialize the control panel as a Toplevel window.
+
+        Args:
+            master: The parent Tk window.
+        """
         # Initialize as a Toplevel window attached to `master`.
         tk.Toplevel.__init__(self, master=master)
         self.title("Control Panel")

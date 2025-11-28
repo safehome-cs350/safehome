@@ -1,3 +1,5 @@
+"""GUI for testing SafeHome sensors."""
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -13,6 +15,11 @@ class SafeHomeSensorTest(tk.Toplevel):
     """
 
     def __init__(self, master=None):
+        """Initialize the sensor test GUI.
+
+        Args:
+            master: The parent Tk window.
+        """
         super().__init__(master)
         self.title("Sensor Test")
         self.geometry("500x450")
@@ -139,7 +146,9 @@ class SafeHomeSensorTest(tk.Toplevel):
         self.wd_status_text.config(state="normal")
         self.wd_status_text.delete(1.0, tk.END)
 
-        scan = DeviceSensorTester.head_WinDoorSensor
+        scan = DeviceSensorTester.head_windoor_sensor
+        if scan is None:
+            scan = DeviceSensorTester.head_WinDoorSensor
         if scan is None:
             self.wd_status_text.insert(tk.END, "No sensors registered\n")
         else:
@@ -174,7 +183,9 @@ class SafeHomeSensorTest(tk.Toplevel):
         self.motion_status_text.config(state="normal")
         self.motion_status_text.delete(1.0, tk.END)
 
-        scan = DeviceSensorTester.head_MotionDetector
+        scan = DeviceSensorTester.head_motion_detector
+        if scan is None:
+            scan = DeviceSensorTester.head_MotionDetector
         if scan is None:
             self.motion_status_text.insert(tk.END, "No detectors registered\n")
         else:
@@ -197,10 +208,10 @@ class SafeHomeSensorTest(tk.Toplevel):
                 # Separate status display: Sensor ON/OFF | Motion DETECTED/CLEAR
                 sensor_status = "🟢 ON " if armed else "🔴 OFF"
                 motion_status = "👁️  DETECTED" if detected else "⚪ CLEAR   "
-                self.motion_status_text.insert(
-                    tk.END,
-                    f"ID {sensor_id}: Sensor[{sensor_status}] Motion[{motion_status}]\n",
+                status_line = (
+                    f"ID {sensor_id}: Sensor[{sensor_status}] Motion[{motion_status}]\n"
                 )
+                self.motion_status_text.insert(tk.END, status_line)
                 scan = getattr(scan, "next", None)
 
         self.motion_status_text.config(state="disabled")
@@ -212,24 +223,30 @@ class SafeHomeSensorTest(tk.Toplevel):
         return s.isdigit() if s else False
 
     def _handle_windoor_sensor(self, action: str):
-        """Handle Window/Door sensor arm/disarm."""
-        inputNumber = self.inputSensorID_WinDoorSensor.get()
-        if inputNumber == "":
+        """Handle Window/Door sensor arm/disarm.
+
+        Args:
+            action: Either "arm" or "disarm".
+        """
+        input_number = self.inputSensorID_WinDoorSensor.get()
+        if input_number == "":
             messagebox.showinfo(self.title(), "input the WinDoorSensor's ID")
             return
-        if not self._validate_digits(inputNumber):
+        if not self._validate_digits(input_number):
             messagebox.showinfo(self.title(), "only digit allowed")
             return
-        selectedID = int(inputNumber)
-        scan = DeviceSensorTester.head_WinDoorSensor
+        selected_id = int(input_number)
+        scan = DeviceSensorTester.head_windoor_sensor
+        if scan is None:
+            scan = DeviceSensorTester.head_WinDoorSensor
         while (
             scan is not None
             and getattr(scan, "sensor_id", getattr(scan, "sensorID", None))
-            != selectedID
+            != selected_id
         ):
             scan = getattr(scan, "next", None)
         if scan is None:
-            messagebox.showinfo(self.title(), f"ID {selectedID} not exist")
+            messagebox.showinfo(self.title(), f"ID {selected_id} not exist")
         else:
             if action == "arm":
                 scan.arm()
@@ -239,23 +256,30 @@ class SafeHomeSensorTest(tk.Toplevel):
             self._update_status()
 
     def _handle_windoor(self, action: str):
-        inputNumber = self.inputSensorID_WinDoorSensor.get()
-        if inputNumber == "":
+        """Handle Window/Door open/close actions.
+
+        Args:
+            action: Either "open" or "close".
+        """
+        input_number = self.inputSensorID_WinDoorSensor.get()
+        if input_number == "":
             messagebox.showinfo(self.title(), "input the WinDoorSensor's ID")
             return
-        if not self._validate_digits(inputNumber):
+        if not self._validate_digits(input_number):
             messagebox.showinfo(self.title(), "only digit allowed")
             return
-        selectedID = int(inputNumber)
-        scan = DeviceSensorTester.head_WinDoorSensor
+        selected_id = int(input_number)
+        scan = DeviceSensorTester.head_windoor_sensor
+        if scan is None:
+            scan = DeviceSensorTester.head_WinDoorSensor
         while (
             scan is not None
             and getattr(scan, "sensor_id", getattr(scan, "sensorID", None))
-            != selectedID
+            != selected_id
         ):
             scan = getattr(scan, "next", None)
         if scan is None:
-            messagebox.showinfo(self.title(), f"ID {selectedID} not exist")
+            messagebox.showinfo(self.title(), f"ID {selected_id} not exist")
         else:
             if action == "open":
                 scan.intrude()
@@ -265,24 +289,30 @@ class SafeHomeSensorTest(tk.Toplevel):
             self._update_status()
 
     def _handle_motion_sensor(self, action: str):
-        """Handle Motion Detector arm/disarm."""
-        inputNumber = self.inputSensorID_MotionDetector.get()
-        if inputNumber == "":
+        """Handle Motion Detector arm/disarm.
+
+        Args:
+            action: Either "arm" or "disarm".
+        """
+        input_number = self.inputSensorID_MotionDetector.get()
+        if input_number == "":
             messagebox.showinfo(self.title(), "input the MotionDetector's ID")
             return
-        if not self._validate_digits(inputNumber):
+        if not self._validate_digits(input_number):
             messagebox.showinfo(self.title(), "only digit allowed")
             return
-        selectedID = int(inputNumber)
-        scan = DeviceSensorTester.head_MotionDetector
+        selected_id = int(input_number)
+        scan = DeviceSensorTester.head_motion_detector
+        if scan is None:
+            scan = DeviceSensorTester.head_MotionDetector
         while (
             scan is not None
             and getattr(scan, "sensor_id", getattr(scan, "sensorID", None))
-            != selectedID
+            != selected_id
         ):
             scan = getattr(scan, "next", None)
         if scan is None:
-            messagebox.showinfo(self.title(), f"ID {selectedID} not exist")
+            messagebox.showinfo(self.title(), f"ID {selected_id} not exist")
         else:
             if action == "arm":
                 scan.arm()
@@ -292,23 +322,30 @@ class SafeHomeSensorTest(tk.Toplevel):
             self._update_status()
 
     def _handle_motion(self, action: str):
-        inputNumber = self.inputSensorID_MotionDetector.get()
-        if inputNumber == "":
+        """Handle Motion Detector detect/clear actions.
+
+        Args:
+            action: Either "detect" or "clear".
+        """
+        input_number = self.inputSensorID_MotionDetector.get()
+        if input_number == "":
             messagebox.showinfo(self.title(), "input the MotionDetector's ID")
             return
-        if not self._validate_digits(inputNumber):
+        if not self._validate_digits(input_number):
             messagebox.showinfo(self.title(), "only digit allowed")
             return
-        selectedID = int(inputNumber)
-        scan = DeviceSensorTester.head_MotionDetector
+        selected_id = int(input_number)
+        scan = DeviceSensorTester.head_motion_detector
+        if scan is None:
+            scan = DeviceSensorTester.head_MotionDetector
         while (
             scan is not None
             and getattr(scan, "sensor_id", getattr(scan, "sensorID", None))
-            != selectedID
+            != selected_id
         ):
             scan = getattr(scan, "next", None)
         if scan is None:
-            messagebox.showinfo(self.title(), f"ID {selectedID} not exist")
+            messagebox.showinfo(self.title(), f"ID {selected_id} not exist")
         else:
             if action == "detect":
                 scan.intrude()
