@@ -18,3 +18,7 @@ frontend-unit-test: build
 		bash -c "xvfb-run -a coverage run --source=frontend -m pytest frontend/tests && \
 		coverage xml -o frontend-coverage.xml && \
 		coverage report -m"
+
+.PHONY: control_panel
+control_panel:
+	python3 -m control_panel.control_panel

@@ -3,6 +3,13 @@
 from pydantic import BaseModel
 
 
+class ControlPanelLoginRequest(BaseModel):
+    """Control panel login request."""
+
+    user_id: str
+    password: str
+
+
 class LoginRequest(BaseModel):
     """Login request."""
 

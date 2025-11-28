@@ -33,6 +33,58 @@ def reset_user_db():
     ]
 
 
+def test_control_panel_login_master_success():
+    """Test successful master login through control panel."""
+    response = client.post(
+        "/control-panel-login/",
+        json={
+            "user_id": "homeowner1",
+            "password": "1234",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == "master"
+
+
+def test_control_panel_login_guest_success():
+    """Test successful guest login through control panel."""
+    response = client.post(
+        "/control-panel-login/",
+        json={
+            "user_id": "homeowner1",
+            "password": "5678",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == "guest"
+
+
+def test_control_panel_login_invalid_user():
+    """Test control panel login with invalid user ID."""
+    response = client.post(
+        "/control-panel-login/",
+        json={
+            "user_id": "unknown",
+            "password": "1234",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "ID not recognized"
+
+
+def test_control_panel_login_wrong_password():
+    """Test control panel login with wrong password."""
+    response = client.post(
+        "/control-panel-login/",
+        json={
+            "user_id": "homeowner1",
+            "password": "wrongpass",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Password incorrect"
+
+
 def test_login_success():
     """Test successful login."""
     response = client.post(

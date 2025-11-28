@@ -2,10 +2,46 @@
 
 from fastapi import APIRouter, HTTPException
 
-from .request import ConfigRequest, GetConfigRequest, LoginRequest, PowerRequest
+from .request import (
+    ConfigRequest,
+    ControlPanelLoginRequest,
+    GetConfigRequest,
+    LoginRequest,
+    PowerRequest,
+)
 from .user import UserDB
 
 router = APIRouter()
+
+
+@router.post(
+    "/control-panel-login/",
+    summary="UC1.a. Log onto the system through control panel.",
+    responses={
+        401: {
+            "description": "Invalid user ID or password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "string",
+                    },
+                }
+            },
+        }
+    },
+)
+def control_panel_login(request: ControlPanelLoginRequest):
+    """UC1.a. Log onto the system through control panel."""
+    user = UserDB.find_user_by_id(request.user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="ID not recognized")
+
+    if request.password == user.master_password:
+        return "master"
+    elif request.password == user.guest_password:
+        return "guest"
+    else:
+        raise HTTPException(status_code=401, detail="Password incorrect")
 
 
 @router.post(
