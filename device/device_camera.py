@@ -1,6 +1,5 @@
 import threading
 import time
-from tkinter import messagebox
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -40,10 +39,7 @@ class DeviceCamera(threading.Thread, InterfaceCamera):
                 self.centerHeight = self.imgSource.height // 2
             except FileNotFoundError:
                 self.imgSource = None
-                try:
-                    messagebox.showerror("File Error", f"{fileName} file open error")
-                except:
-                    print(f"ERROR: {fileName} file open error")
+                print(f"ERROR: {fileName} file open error")
                 return
 
     def get_id(self):
