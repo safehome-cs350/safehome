@@ -24,26 +24,27 @@ def test_uc_1b(tk_root):
     login_window = LoginWindow(tk_root, callback)
 
     # 2. The homeowner enters user ID.
-    login_window.username_entry.insert(0, "admin")
+    login_window.username_entry.insert(0, "homeowner1")
 
     # 3. The homeowner enters two level passwords, each have 8 characters.
-    login_window.password_entry.insert(0, "admin123")
+    login_window.password_entry.insert(0, "12345678")
+    login_window.password2_entry.insert(0, "abcdefgh")
 
     # 4. The system validates the password.
     login_window.handle_login()
 
     # 5. The system displays all major function buttons and home safety status.
-    callback.assert_called_once_with("admin")
+    callback.assert_called_once_with("homeowner1")
 
 
 def test_uc_1c(tk_root):
     """Test for UC1.c. Configure system setting."""
     # 1, 2
     mock_app = Mock()
+    mock_app.current_user = "homeowner1"
     config_panel = ConfigurationPanel(tk_root, mock_app)
 
     # 3, 4
-    config_panel.delay_time_var.set("100")
     config_panel.phone_number_var.set("010-9876-5432")
 
     # 5

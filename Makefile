@@ -34,9 +34,9 @@ control-panel:
 integration-test: build
 	docker run --rm -v $(WORKSPACE):/workspace -w /workspace $(IMAGE_NAME) \
 		bash -c "\
-			uvicorn backend.app:app --host 0.0.0.0 --port 8000 & \
+			uvicorn backend.app:app --host 0.0.0.0 --port 8000 --log-level warning --no-access-log & \
 			SERVER_PID=\$$!; \
 			until nc -z localhost 8000; do sleep 0.1; done; \
-			xvfb-run -a pytest tests/integration_tests; \
+			xvfb-run -a pytest tests/integration_tests -v; \
 			kill \$$SERVER_PID; \
 			wait \$$SERVER_PID || true"
