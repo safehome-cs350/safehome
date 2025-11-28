@@ -2,5 +2,6 @@ __pycache__
 .DS_Store
 .vscode
 .coverage
+.venv
 backend-coverage.xml
 frontend-coverage.xml

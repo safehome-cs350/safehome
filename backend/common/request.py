@@ -23,6 +23,12 @@ class ConfigRequest(BaseModel):
     phone_number: str | None
 
 
+class GetConfigRequest(BaseModel):
+    """Get config request."""
+
+    user_id: str
+
+
 class PowerRequest(BaseModel):
     """Power request."""
 
