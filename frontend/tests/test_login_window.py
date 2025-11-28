@@ -17,9 +17,10 @@ class TestLoginWindow:
         window = LoginWindow(root, callback)
 
         assert window.on_success == callback
-        assert window.default_username == "admin"
-        assert window.default_password == "admin123"
         assert window.title() == "SafeHome - Login"
+        assert hasattr(window, "username_entry")
+        assert hasattr(window, "password_entry")
+        assert hasattr(window, "password2_entry")
 
         root.destroy()
 
@@ -62,11 +63,14 @@ class TestLoginWindow:
 
         window.username_entry.insert(0, "wrong")
         window.password_entry.insert(0, "wrong")
+        window.password2_entry.insert(0, "wrong")
 
-        window.handle_login()
+        with patch.object(window.api_client, "login") as mock_login:
+            mock_login.side_effect = Exception("401: Invalid credentials")
+            window.handle_login()
 
-        mock_messagebox.showerror.assert_called_once()
-        callback.assert_not_called()
+            mock_messagebox.showerror.assert_called_once()
+            callback.assert_not_called()
 
         root.destroy()
 
@@ -80,10 +84,14 @@ class TestLoginWindow:
 
         window.username_entry.insert(0, "admin")
         window.password_entry.insert(0, "admin123")
+        window.password2_entry.insert(0, "admin456")
 
-        window.handle_login()
+        with patch.object(window.api_client, "login") as mock_login:
+            mock_login.return_value = {"message": "Welcome!"}
+            window.handle_login()
 
-        mock_messagebox.showerror.assert_not_called()
-        callback.assert_called_once_with("admin")
+            mock_login.assert_called_once_with("admin", "admin123", "admin456")
+            mock_messagebox.showerror.assert_not_called()
+            callback.assert_called_once_with("admin")
 
         root.destroy()
