@@ -1,10 +1,14 @@
 """Surveillance panel for camera management."""
 
+import base64
+import io
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
 
 from PIL import Image, ImageTk
+
+from .api_client import APIClient
 
 
 class SurveillancePanel(ttk.Frame):
@@ -14,35 +18,17 @@ class SurveillancePanel(ttk.Frame):
         """Initialize the surveillance panel."""
         super().__init__(parent)
         self.app = app
+        self.api_client = APIClient()
 
         self.project_root = Path(__file__).parent.parent.resolve()
 
-        self.cameras = {
-            1: {
-                "name": "Front Door Camera",
-                "enabled": True,
-                "password": None,
-                "location": "Front Door",
-            },
-            2: {
-                "name": "Living Room Camera",
-                "enabled": True,
-                "password": None,
-                "location": "Living Room",
-            },
-            3: {
-                "name": "Back Door Camera",
-                "enabled": False,
-                "password": "camera123",
-                "location": "Back Door",
-            },
-        }
+        self.cameras = {}
         self.current_camera = None
-        self.zoom_level = 1.0
-        self.pan_x = 0
-        self.pan_y = 0
+        self.current_pan = 0
+        self.current_zoom = 2
 
         self.setup_ui()
+        self.load_cameras()
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -110,6 +96,14 @@ class SurveillancePanel(ttk.Frame):
         )
         del_pwd_btn.pack(pady=2)
 
+        refresh_btn = ttk.Button(
+            control_frame,
+            text="Refresh List",
+            command=self.load_cameras,
+            width=18,
+        )
+        refresh_btn.pack(pady=2)
+
         floor_plan_btn = ttk.Button(
             control_frame,
             text="View Floor Plan",
@@ -143,6 +137,9 @@ class SurveillancePanel(ttk.Frame):
             font=("Arial", 16),
         )
 
+        # Bind canvas resize to update camera view
+        self.camera_canvas.bind("<Configure>", self.on_canvas_resize)
+
         pan_zoom_frame = ttk.LabelFrame(
             right_frame, text="Pan/Zoom Controls", padding=10
         )
@@ -155,14 +152,14 @@ class SurveillancePanel(ttk.Frame):
         zoom_in_btn = ttk.Button(
             zoom_frame,
             text="Zoom In",
-            command=lambda: self.adjust_zoom(1.2),
+            command=lambda: self.adjust_zoom(1),
             width=10,
         )
         zoom_in_btn.pack(side=tk.LEFT, padx=2)
         zoom_out_btn = ttk.Button(
             zoom_frame,
             text="Zoom Out",
-            command=lambda: self.adjust_zoom(0.8),
+            command=lambda: self.adjust_zoom(-1),
             width=10,
         )
         zoom_out_btn.pack(side=tk.LEFT, padx=2)
@@ -171,33 +168,22 @@ class SurveillancePanel(ttk.Frame):
         )
         reset_zoom_btn.pack(side=tk.LEFT, padx=2)
 
-        self.zoom_label = ttk.Label(zoom_frame, text="1.0x")
+        self.zoom_label = ttk.Label(zoom_frame, text="2")
         self.zoom_label.pack(side=tk.LEFT, padx=10)
 
         pan_frame = ttk.Frame(pan_zoom_frame)
         pan_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(pan_frame, text="Pan:").pack(side=tk.LEFT, padx=5)
-        pan_up_btn = ttk.Button(
-            pan_frame,
-            text="↑",
-            command=lambda: self.adjust_pan(0, -10),
-            width=5,
-        )
-        pan_up_btn.pack(side=tk.LEFT, padx=2)
-        pan_down_btn = ttk.Button(
-            pan_frame, text="↓", command=lambda: self.adjust_pan(0, 10), width=5
-        )
-        pan_down_btn.pack(side=tk.LEFT, padx=2)
         pan_left_btn = ttk.Button(
             pan_frame,
             text="←",
-            command=lambda: self.adjust_pan(-10, 0),
+            command=lambda: self.adjust_pan(-1),
             width=5,
         )
         pan_left_btn.pack(side=tk.LEFT, padx=2)
         pan_right_btn = ttk.Button(
-            pan_frame, text="→", command=lambda: self.adjust_pan(10, 0), width=5
+            pan_frame, text="→", command=lambda: self.adjust_pan(1), width=5
         )
         pan_right_btn.pack(side=tk.LEFT, padx=2)
         reset_pan_btn = ttk.Button(
@@ -205,7 +191,40 @@ class SurveillancePanel(ttk.Frame):
         )
         reset_pan_btn.pack(side=tk.LEFT, padx=2)
 
-        self.refresh_camera_list()
+        self.pan_label = ttk.Label(pan_frame, text="0")
+        self.pan_label.pack(side=tk.LEFT, padx=10)
+
+    def on_canvas_resize(self, event):
+        """Handle canvas resize event."""
+        if self.current_camera:
+            self.load_camera_view(self.current_camera)
+
+    def load_cameras(self):
+        """Load cameras from the API."""
+        try:
+            response = self.api_client.list_cameras()
+            self.cameras = {}
+            for camera in response.get("cameras", []):
+                self.cameras[camera["camera_id"]] = {
+                    "name": camera["name"],
+                    "location": camera["location"],
+                    "is_enabled": camera["is_enabled"],
+                    "is_online": camera["is_online"],
+                    "has_password": camera["has_password"],
+                }
+            self.refresh_camera_list()
+        except Exception as e:
+            error_message = str(e)
+            if "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to load cameras: {error_message}"
+                )
 
     def refresh_camera_list(self):
         """Refresh the camera list display."""
@@ -213,8 +232,10 @@ class SurveillancePanel(ttk.Frame):
             self.camera_tree.delete(item)
 
         for cam_id, camera in sorted(self.cameras.items()):
-            status = "Enabled" if camera["enabled"] else "Disabled"
-            password_status = "Protected" if camera["password"] else "No Password"
+            status = "Enabled" if camera["is_enabled"] else "Disabled"
+            if not camera["is_online"]:
+                status = "Offline"
+            password_status = "Protected" if camera["has_password"] else "No Password"
             self.camera_tree.insert(
                 "",
                 tk.END,
@@ -234,103 +255,233 @@ class SurveillancePanel(ttk.Frame):
         if cam_id in self.cameras:
             camera = self.cameras[cam_id]
 
-            if camera["password"]:
+            if camera["has_password"]:
                 password = simpledialog.askstring(
                     "Camera Password",
                     f"Enter password for {camera['name']}:",
                     show="*",
                 )
-                if password != camera["password"]:
-                    messagebox.showerror("Error", "Incorrect password")
+                if not password:
                     self.camera_tree.selection_remove(selected[0])
                     return
+                # Note: Backend doesn't validate password on view,
+                # so we just proceed if password is entered
 
-            if not camera["enabled"]:
+            if not camera["is_enabled"]:
                 messagebox.showinfo(
                     "Camera Disabled", "This camera is currently disabled"
                 )
                 return
 
+            if not camera["is_online"]:
+                messagebox.showwarning(
+                    "Camera Offline", "This camera is currently offline"
+                )
+                return
+
             self.current_camera = cam_id
-            self.display_camera_view(cam_id)
+            self.load_camera_view(cam_id)
 
-    def display_camera_view(self, cam_id):
-        """Display the camera view."""
-        camera = self.cameras[cam_id]
+    def load_camera_view(self, cam_id):
+        """Load and display the camera view from API."""
+        try:
+            response = self.api_client.get_camera_view(cam_id)
+            camera = self.cameras[cam_id]
 
-        self.camera_canvas.delete("all")
+            self.current_pan = response.get("pan_position", 0)
+            self.current_zoom = response.get("zoom_level", 2)
+            self.zoom_label.config(text=str(self.current_zoom))
+            self.pan_label.config(text=str(self.current_pan))
 
-        image_path = None
-        if cam_id == 1:
-            image_path = self.project_root / "camera1.jpg"
-        elif cam_id == 2:
-            image_path = self.project_root / "camera2.jpg"
-        elif cam_id == 3:
-            image_path = self.project_root / "camera3.jpg"
+            self.camera_canvas.delete("all")
 
-        if image_path and image_path.exists():
-            try:
-                img = Image.open(str(image_path))
-                img = img.resize((640, 480), Image.Resampling.LANCZOS)
-                self.camera_image = ImageTk.PhotoImage(img)
-                self.camera_canvas.create_image(
-                    320, 240, image=self.camera_image, anchor=tk.CENTER
+            # Decode base64 image if available
+            base64_image = response.get("current_view_base64")
+            if base64_image:
+                try:
+                    image_data = base64.b64decode(base64_image)
+                    img = Image.open(io.BytesIO(image_data))
+                    # Resize to fit canvas
+                    canvas_width = self.camera_canvas.winfo_width()
+                    canvas_height = self.camera_canvas.winfo_height()
+                    if canvas_width > 1 and canvas_height > 1:
+                        img = img.resize(
+                            (canvas_width, canvas_height), Image.Resampling.LANCZOS
+                        )
+                    else:
+                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
+                    self.camera_image = ImageTk.PhotoImage(img)
+                    self.camera_canvas.create_image(
+                        canvas_width // 2 if canvas_width > 1 else 320,
+                        canvas_height // 2 if canvas_height > 1 else 240,
+                        image=self.camera_image,
+                        anchor=tk.CENTER,
+                    )
+                except Exception as e:
+                    self.camera_canvas.create_text(
+                        320,
+                        240,
+                        text=f"Image decode error: {e}",
+                        fill="white",
+                        font=("Arial", 14),
+                    )
+
+            # Display camera info
+            self.camera_canvas.create_text(
+                10,
+                10,
+                text=f"{camera['name']} - {camera['location']}",
+                fill="white",
+                font=("Arial", 12, "bold"),
+                anchor=tk.NW,
+            )
+            info_text = (
+                f"Pan: {self.current_pan}, Zoom: {self.current_zoom}, "
+                f"Time: {response.get('current_time', 0)}"
+            )
+            self.camera_canvas.create_text(
+                10,
+                30,
+                text=info_text,
+                fill="white",
+                font=("Arial", 10),
+                anchor=tk.NW,
+            )
+
+        except Exception as e:
+            error_message = str(e)
+            if "400" in error_message:
+                messagebox.showerror("Error", "Camera is disabled")
+            elif "404" in error_message:
+                messagebox.showerror("Error", "Camera not found")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
                 )
-                self.camera_canvas.create_text(
-                    10,
-                    10,
-                    text=camera["name"],
-                    fill="white",
-                    font=("Arial", 12, "bold"),
-                    anchor=tk.NW,
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to load camera view: {error_message}"
                 )
-            except Exception as e:
-                self.camera_canvas.create_text(
-                    320,
-                    240,
-                    text=f"Camera View\n{camera['name']}\n(Image load error: {e})",
-                    fill="white",
-                    font=("Arial", 14),
-                )
-        else:
+            self.camera_canvas.delete("all")
             self.camera_canvas.create_text(
                 320,
                 240,
-                text=f"Camera View\n{camera['name']}\n{camera['location']}",
+                text="Failed to load camera view",
                 fill="white",
                 font=("Arial", 14),
             )
 
-    def adjust_zoom(self, factor):
-        """Adjust zoom level."""
-        self.zoom_level *= factor
-        self.zoom_level = max(0.5, min(5.0, self.zoom_level))
-        self.zoom_label.config(text=f"{self.zoom_level:.1f}x")
-        if self.current_camera:
-            self.display_camera_view(self.current_camera)
+    def adjust_zoom(self, direction):
+        """Adjust zoom level (1 = zoom in, -1 = zoom out)."""
+        if not self.current_camera:
+            return
+
+        # Calculate new zoom level
+        new_zoom = self.current_zoom
+        if direction > 0:
+            new_zoom = min(9, self.current_zoom + 1)
+        else:
+            new_zoom = max(1, self.current_zoom - 1)
+
+        try:
+            response = self.api_client.control_camera_ptz(
+                self.current_camera, zoom=new_zoom
+            )
+            self.current_zoom = response.get("zoom_level", self.current_zoom)
+            self.zoom_label.config(text=str(self.current_zoom))
+            if response.get("success"):
+                self.load_camera_view(self.current_camera)
+            else:
+                messagebox.showwarning(
+                    "Warning", response.get("message", "Zoom limit reached")
+                )
+        except Exception as e:
+            error_message = str(e)
+            if "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror("Error", f"Failed to adjust zoom: {error_message}")
 
     def reset_zoom(self):
         """Reset zoom to default."""
-        self.zoom_level = 1.0
-        self.zoom_label.config(text="1.0x")
-        if self.current_camera:
-            self.display_camera_view(self.current_camera)
+        if not self.current_camera:
+            return
 
-    def adjust_pan(self, dx, dy):
-        """Adjust pan position."""
-        self.pan_x += dx
-        self.pan_y += dy
-        self.pan_x = max(-100, min(100, self.pan_x))
-        self.pan_y = max(-100, min(100, self.pan_y))
-        if self.current_camera:
-            self.display_camera_view(self.current_camera)
+        try:
+            response = self.api_client.control_camera_ptz(self.current_camera, zoom=2)
+            self.current_zoom = response.get("zoom_level", 2)
+            self.zoom_label.config(text=str(self.current_zoom))
+            if response.get("success"):
+                self.load_camera_view(self.current_camera)
+        except Exception as e:
+            error_message = str(e)
+            if "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror("Error", f"Failed to reset zoom: {error_message}")
+
+    def adjust_pan(self, direction):
+        """Adjust pan position (left = -1, right = 1)."""
+        if not self.current_camera:
+            return
+
+        new_pan = self.current_pan + direction
+        new_pan = max(-5, min(5, new_pan))
+
+        try:
+            response = self.api_client.control_camera_ptz(
+                self.current_camera, pan=new_pan
+            )
+            self.current_pan = response.get("pan_position", self.current_pan)
+            self.pan_label.config(text=str(self.current_pan))
+            if response.get("success"):
+                self.load_camera_view(self.current_camera)
+            else:
+                messagebox.showwarning(
+                    "Warning", response.get("message", "Pan limit reached")
+                )
+        except Exception as e:
+            error_message = str(e)
+            if "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror("Error", f"Failed to adjust pan: {error_message}")
 
     def reset_pan(self):
         """Reset pan to center."""
-        self.pan_x = 0
-        self.pan_y = 0
-        if self.current_camera:
-            self.display_camera_view(self.current_camera)
+        if not self.current_camera:
+            return
+
+        try:
+            response = self.api_client.control_camera_ptz(self.current_camera, pan=0)
+            self.current_pan = response.get("pan_position", 0)
+            self.pan_label.config(text=str(self.current_pan))
+            if response.get("success"):
+                self.load_camera_view(self.current_camera)
+        except Exception as e:
+            error_message = str(e)
+            if "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror("Error", f"Failed to reset pan: {error_message}")
 
     def enable_camera(self):
         """Enable the selected camera."""
@@ -342,12 +493,24 @@ class SurveillancePanel(ttk.Frame):
         item = self.camera_tree.item(selected[0])
         cam_id = int(item["tags"][0])
 
-        if cam_id in self.cameras:
-            self.cameras[cam_id]["enabled"] = True
-            self.refresh_camera_list()
-            messagebox.showinfo(
-                "Success", f"Camera '{self.cameras[cam_id]['name']}' enabled"
-            )
+        try:
+            self.api_client.enable_camera(cam_id)
+            self.load_cameras()
+            messagebox.showinfo("Success", "Camera enabled")
+        except Exception as e:
+            error_message = str(e)
+            if "404" in error_message:
+                messagebox.showerror("Error", "Camera not found")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to enable camera: {error_message}"
+                )
 
     def disable_camera(self):
         """Disable the selected camera."""
@@ -359,12 +522,24 @@ class SurveillancePanel(ttk.Frame):
         item = self.camera_tree.item(selected[0])
         cam_id = int(item["tags"][0])
 
-        if cam_id in self.cameras:
-            self.cameras[cam_id]["enabled"] = False
-            self.refresh_camera_list()
-            messagebox.showinfo(
-                "Success", f"Camera '{self.cameras[cam_id]['name']}' disabled"
-            )
+        try:
+            self.api_client.disable_camera(cam_id)
+            self.load_cameras()
+            messagebox.showinfo("Success", "Camera disabled")
+        except Exception as e:
+            error_message = str(e)
+            if "404" in error_message:
+                messagebox.showerror("Error", "Camera not found")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to disable camera: {error_message}"
+                )
 
     def set_camera_password(self):
         """Set password for the selected camera."""
@@ -378,16 +553,35 @@ class SurveillancePanel(ttk.Frame):
         item = self.camera_tree.item(selected[0])
         cam_id = int(item["tags"][0])
 
-        if cam_id in self.cameras:
-            password = simpledialog.askstring(
-                "Set Camera Password",
-                f"Enter password for {self.cameras[cam_id]['name']}:",
-                show="*",
-            )
-            if password:
-                self.cameras[cam_id]["password"] = password
-                self.refresh_camera_list()
+        if cam_id not in self.cameras:
+            return
+
+        password = simpledialog.askstring(
+            "Set Camera Password",
+            f"Enter password for {self.cameras[cam_id]['name']}:",
+            show="*",
+        )
+        if password:
+            try:
+                self.api_client.set_camera_password(cam_id, password)
+                self.load_cameras()
                 messagebox.showinfo("Success", "Camera password set")
+            except Exception as e:
+                error_message = str(e)
+                if "404" in error_message:
+                    messagebox.showerror("Error", "Camera not found")
+                elif (
+                    "Connection" in error_message or "refused" in error_message.lower()
+                ):
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running.",
+                    )
+                else:
+                    messagebox.showerror(
+                        "Error", f"Failed to set password: {error_message}"
+                    )
 
     def delete_camera_password(self):
         """Delete password for the selected camera."""
@@ -401,20 +595,39 @@ class SurveillancePanel(ttk.Frame):
         item = self.camera_tree.item(selected[0])
         cam_id = int(item["tags"][0])
 
-        if cam_id in self.cameras:
-            if not self.cameras[cam_id]["password"]:
-                messagebox.showinfo("Info", "Camera has no password set")
-                return
+        if cam_id not in self.cameras:
+            return
 
-            result = messagebox.askyesno(
-                "Delete Password",
-                f"Are you sure you want to delete the password for "
-                f"{self.cameras[cam_id]['name']}?",
-            )
-            if result:
-                self.cameras[cam_id]["password"] = None
-                self.refresh_camera_list()
+        if not self.cameras[cam_id]["has_password"]:
+            messagebox.showinfo("Info", "Camera has no password set")
+            return
+
+        result = messagebox.askyesno(
+            "Delete Password",
+            f"Are you sure you want to delete the password for "
+            f"{self.cameras[cam_id]['name']}?",
+        )
+        if result:
+            try:
+                self.api_client.delete_camera_password(cam_id)
+                self.load_cameras()
                 messagebox.showinfo("Success", "Camera password deleted")
+            except Exception as e:
+                error_message = str(e)
+                if "404" in error_message:
+                    messagebox.showerror("Error", "Camera not found")
+                elif (
+                    "Connection" in error_message or "refused" in error_message.lower()
+                ):
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running.",
+                    )
+                else:
+                    messagebox.showerror(
+                        "Error", f"Failed to delete password: {error_message}"
+                    )
 
     def show_floor_plan(self):
         """Show the floor plan with camera locations."""
@@ -457,7 +670,12 @@ class SurveillancePanel(ttk.Frame):
         for cam_id, (x, y) in camera_positions.items():
             if cam_id in self.cameras:
                 camera = self.cameras[cam_id]
-                color = "green" if camera["enabled"] else "red"
+                if not camera["is_online"]:
+                    color = "gray"
+                elif camera["is_enabled"]:
+                    color = "green"
+                else:
+                    color = "red"
                 canvas.create_oval(
                     x - 10, y - 10, x + 10, y + 10, fill=color, outline="black"
                 )
@@ -492,8 +710,36 @@ class SurveillancePanel(ttk.Frame):
 
     def show_thumbnails(self):
         """Show camera thumbnails."""
+        selected = self.camera_tree.selection()
+        if not selected:
+            messagebox.showinfo(
+                "No Selection", "Please select a camera to view thumbnails"
+            )
+            return
+
+        item = self.camera_tree.item(selected[0])
+        cam_id = int(item["tags"][0])
+
+        try:
+            thumbnails = self.api_client.get_camera_thumbnails(cam_id)
+        except Exception as e:
+            error_message = str(e)
+            if "404" in error_message:
+                messagebox.showerror("Error", "Camera not found")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to load thumbnails: {error_message}"
+                )
+            return
+
         thumbnail_window = tk.Toplevel(self)
-        thumbnail_window.title("Camera Thumbnails")
+        thumbnail_window.title(f"Camera Thumbnails - {self.cameras[cam_id]['name']}")
         thumbnail_window.geometry("900x600")
 
         canvas_frame = ttk.Frame(thumbnail_window)
@@ -515,46 +761,32 @@ class SurveillancePanel(ttk.Frame):
 
         row = 0
         col = 0
-        for cam_id, camera in sorted(self.cameras.items()):
-            if camera["enabled"]:
-                thumb_frame = ttk.LabelFrame(
-                    scrollable_frame, text=camera["name"], padding=5
-                )
-                thumb_frame.grid(row=row, column=col, padx=10, pady=10)
+        for thumb in thumbnails:
+            thumb_frame = ttk.LabelFrame(
+                scrollable_frame,
+                text=f"Captured: {thumb.get('captured_at', 'Unknown')}",
+                padding=5,
+            )
+            thumb_frame.grid(row=row, column=col, padx=10, pady=10)
 
-                image_path = None
-                if cam_id == 1:
-                    image_path = self.project_root / "camera1.jpg"
-                elif cam_id == 2:
-                    image_path = self.project_root / "camera2.jpg"
-                elif cam_id == 3:
-                    image_path = self.project_root / "camera3.jpg"
+            # Display thumbnail URL or placeholder
+            image_url = thumb.get("image_url", "")
+            if image_url:
+                ttk.Label(thumb_frame, text=f"Image: {image_url}").pack()
+            else:
+                ttk.Label(thumb_frame, text="No thumbnail available").pack()
 
-                if image_path and image_path.exists():
-                    try:
-                        img = Image.open(str(image_path))
-                        img = img.resize((200, 150), Image.Resampling.LANCZOS)
-                        thumb_img = ImageTk.PhotoImage(img)
-                        label = ttk.Label(thumb_frame, image=thumb_img)
-                        label.image = thumb_img
-                        label.pack()
-                    except Exception:
-                        ttk.Label(thumb_frame, text="No image").pack()
-                else:
-                    ttk.Label(thumb_frame, text="Camera View").pack()
+            ttk.Label(thumb_frame, text=f"ID: {thumb.get('id', 'N/A')}").pack()
 
-                ttk.Button(
-                    thumb_frame,
-                    text="View",
-                    command=lambda cid=cam_id: self.view_camera_from_thumbnail(
-                        cid, thumbnail_window
-                    ),
-                ).pack(pady=5)
+            col += 1
+            if col >= 3:
+                col = 0
+                row += 1
 
-                col += 1
-                if col >= 3:
-                    col = 0
-                    row += 1
+        if not thumbnails:
+            ttk.Label(
+                scrollable_frame, text="No thumbnails available for this camera"
+            ).pack(pady=20)
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
