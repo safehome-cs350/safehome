@@ -1,14 +1,15 @@
+"""Abstract base class for a control panel."""
+
 import tkinter as tk
 from abc import ABC, abstractmethod
 from tkinter import Button, Text
 
 
 class DeviceControlPanelAbstract(tk.Toplevel, ABC):
-    """None a new root must exist before creating a Toplevel; callers
-    should create the global `tk.Tk()` first (the `main.py` runner does).
-    """
+    """Device Control Panel Abstract Base Class."""
 
     def __init__(self, master=None):
+        """Initialize the control panel GUI."""
         # Initialize as a Toplevel window attached to `master`.
         tk.Toplevel.__init__(self, master=master)
         self.title("Control Panel")
@@ -80,8 +81,6 @@ class DeviceControlPanelAbstract(tk.Toplevel, ABC):
         self.display_not_ready.config(text="not ready")
         self.display_not_ready.pack(fill="both", expand=True)
 
-        # Text display area (smaller and placed below top row so it doesn't cover widgets)
-        # Make the text display visually match the top area: remove border and highlight
         self.display_text = Text(
             self,
             height=3,

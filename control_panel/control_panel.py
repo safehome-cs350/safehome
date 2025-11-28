@@ -1,32 +1,9 @@
-#!/usr/bin/env python3
-"""Control Panel Example
-=====================
-This example demonstrates the SafeHome Control Panel GUI with:
-- Number keypad (0-9, *, #)
-- LED indicators (armed, power)
-- Status displays (away, stay, not ready)
-- Message display area
+"""Control panel."""
 
-Usage:
-    python -m example.example_control_panel
-    OR
-    python example_control_panel.py (when run from example directory)
-"""
-
-import sys
 import tkinter as tk
 from enum import Enum
-from pathlib import Path
 
 import httpx
-
-# Add parent directory to path for direct script execution
-if __name__ == "__main__":
-    current_dir = Path(__file__).resolve().parent
-    parent_dir = current_dir.parent
-    if str(parent_dir) not in sys.path:
-        sys.path.insert(0, str(parent_dir))
-
 
 from .control_panel_abstract import DeviceControlPanelAbstract
 
@@ -37,29 +14,58 @@ class ControlPanelState(Enum):
     IDLE = 0
     MASTER = 1
     GUEST = 2
+    PASSWORD_CHANGE_CURRENT = 3
+    PASSWORD_CHANGE_NEW = 4
+    PASSWORD_CHANGE_RECONFIRM = 5
+    LOCKED = 6
+    POWERED_OFF = 7
 
 
-# Example implementation for testing
-class TestControlPanel(DeviceControlPanelAbstract):
-    """Concrete implementation for testing the control panel."""
+class ControlPanel(DeviceControlPanelAbstract):
+    """Concrete implementation for the control panel."""
 
     SERVER_URL = "http://localhost:8000"
 
     def __init__(self):
         """Initialize the control panel."""
         super().__init__()
+        self.set_display_away(False)
+        self.set_display_stay(True)
+        self.set_display_not_ready(False)
         self.set_display_short_message1("System Ready")
         self.set_display_short_message2("Enter Code")
         self.set_powered_led(True)
         self.button_sequence = ""
         self.state = ControlPanelState.IDLE
         self.user_id = "homeowner1"
+        self.new_password = ""
+        self.fail_count = 0
+
+    def handle_wrong_password(self):
+        """Handle wrong password."""
+        self.fail_count += 1
+        if self.fail_count >= 3:
+            self.state = ControlPanelState.LOCKED
+            self.set_display_short_message1("System Locked")
+            self.set_display_short_message2("")
+            self.fail_count = 0
+            self.after(60000, self.unlock)
+        elif self.state == ControlPanelState.IDLE:
+            self.set_display_short_message1("Login Failed")
+            self.set_display_short_message2("Enter Code")
+        elif self.state == ControlPanelState.PASSWORD_CHANGE_CURRENT:
+            self.state = ControlPanelState.MASTER
+            self.set_display_short_message1("Wrong Password")
+            self.set_display_short_message2("Choose Action")
 
     def check_password(self):
         """Check the entered password sequence."""
         if len(self.button_sequence) == 4:
-            url = "http://localhost:8000/control-panel-login/"
-            payload = {"user_id": self.user_id, "password": self.button_sequence}
+            url = f"{self.SERVER_URL}/control-panel-login/"
+            payload = {
+                "user_id": self.user_id,
+                "password": self.button_sequence,
+            }
             try:
                 with httpx.Client(timeout=5) as client:
                     response = client.post(url, json=payload)
@@ -68,124 +74,318 @@ class TestControlPanel(DeviceControlPanelAbstract):
                     if role == "master":
                         self.state = ControlPanelState.MASTER
                         self.set_display_short_message1("Master Login")
+                        self.set_display_short_message2("Choose Action")
+                        self.fail_count = 0
                     elif role == "guest":
                         self.state = ControlPanelState.GUEST
                         self.set_display_short_message1("Guest Login")
+                        self.set_display_short_message2("Choose Action")
+                        self.fail_count = 0
             except httpx.HTTPStatusError:
-                self.set_display_short_message1("Login Failed")
+                self.handle_wrong_password()
             except httpx.RequestError:
                 self.set_display_short_message1("Server Error")
+                self.set_display_short_message2("Enter Code")
             finally:
                 self.button_sequence = ""
+
+    def unlock(self):
+        """Unlock the system after lock period."""
+        self.state = ControlPanelState.IDLE
+        self.set_display_short_message1("System Ready")
+        self.set_display_short_message2("Enter Code")
+
+    def password_change_check_password(self):
+        """Check the entered password sequence."""
+        if len(self.button_sequence) == 4:
+            url = f"{self.SERVER_URL}/control-panel-login/"
+            payload = {
+                "user_id": self.user_id,
+                "password": self.button_sequence,
+            }
+            try:
+                with httpx.Client(timeout=5) as client:
+                    response = client.post(url, json=payload)
+                    response.raise_for_status()
+                    role = response.json()
+                    if role == "master":
+                        self.state = ControlPanelState.PASSWORD_CHANGE_NEW
+                        self.set_display_short_message1("Change Password")
+                        self.set_display_short_message2("Enter New Password")
+                    else:
+                        self.handle_wrong_password()
+            except httpx.HTTPStatusError:
+                self.handle_wrong_password()
+            except httpx.RequestError:
+                self.state = ControlPanelState.MASTER
+                self.set_display_short_message1("Server Error")
                 self.set_display_short_message2("Choose Action")
+            finally:
+                self.button_sequence = ""
 
-    def button1(self):
-        """Handle button 1 press."""
-        if self.state == ControlPanelState.IDLE:
-            self.button_sequence += "1"
-            self.set_display_short_message2(f"Code: {self.button_sequence}")
-            self.check_password()
-        elif self.state == ControlPanelState.MASTER:
-            try:
-                response = httpx.post(
-                    f"{self.SERVER_URL}/power-on/", json={"user_id": self.user_id}
-                )
-                response.raise_for_status()
-                self.set_powered_led(True)
-                print("Power on")
-            except httpx.HTTPError as e:
-                print("Failed to power on:", e)
+    def password_change_new_password(self):
+        """Get the new password sequence."""
+        if len(self.button_sequence) == 4:
+            self.state = ControlPanelState.PASSWORD_CHANGE_RECONFIRM
+            self.new_password = self.button_sequence
+            self.button_sequence = ""
+            self.set_display_short_message1("Change Password")
+            self.set_display_short_message2("Enter Password Again")
 
-    def button2(self):
-        """Handle button 2 press."""
-        if self.state == ControlPanelState.IDLE:
-            self.button_sequence += "2"
-            self.set_display_short_message2(f"Code: {self.button_sequence}")
-            self.check_password()
-        elif self.state == ControlPanelState.MASTER:
-            try:
-                response = httpx.post(
-                    f"{self.SERVER_URL}/power-off/", json={"user_id": self.user_id}
-                )
-                response.raise_for_status()
-                self.set_powered_led(False)
-                print("Power off")
-            except httpx.HTTPError as e:
-                print("Failed to power off:", e)
+    def password_change_reconfirm_password(self):
+        """Reconfirm password sequence."""
+        if len(self.button_sequence) == 4:
+            self.state = ControlPanelState.MASTER
+            if self.button_sequence == self.new_password:
+                url = "http://localhost:8000/config/"
+                payload = {
+                    "user_id": self.user_id,
+                    "password1": None,
+                    "password2": None,
+                    "master_password": self.new_password,
+                    "guest_password": None,
+                    "delay_time": None,
+                    "phone_number": None,
+                }
+                try:
+                    with httpx.Client(timeout=5) as client:
+                        response = client.post(url, json=payload)
+                        response.raise_for_status()
+                        self.state = ControlPanelState.MASTER
+                        self.set_display_short_message1("Password Changed")
+                        self.set_display_short_message2("Choose Action")
+                except httpx.HTTPError:
+                    self.state = ControlPanelState.MASTER
+                    self.set_display_short_message1("Server Error")
+                    self.set_display_short_message2("Choose Action")
+            else:
+                self.state = ControlPanelState.PASSWORD_CHANGE_NEW
+                self.set_display_short_message1("Passwords Mismatch")
+                self.set_display_short_message2("Enter New Password")
+            self.button_sequence = ""
 
-    def button3(self):
-        """Handle button 3 press."""
-        if self.state == ControlPanelState.IDLE:
-            self.button_sequence += "3"
-            self.set_display_short_message2(f"Code: {self.button_sequence}")
-            self.check_password()
-        elif self.state == ControlPanelState.MASTER:
-            try:
-                # Power off
-                response = httpx.post(
-                    f"{self.SERVER_URL}/power-off/", json={"user_id": self.user_id}
-                )
-                response.raise_for_status()
-                self.set_powered_led(False)
-                # Power on
-                response = httpx.post(
-                    f"{self.SERVER_URL}/power-on/", json={"user_id": self.user_id}
-                )
-                response.raise_for_status()
-                self.set_powered_led(True)
-                print("Reset")
-            except httpx.HTTPError as e:
-                print("Failed to reset:", e)
+    def power_on(self):
+        """Power on the system."""
+        httpx.post(f"{self.SERVER_URL}/power-on/", json={"user_id": self.user_id})
+        self.state = ControlPanelState.IDLE
+        self.set_powered_led(True)
+        self.set_display_away(False)
+        self.set_display_stay(True)
+        self.set_display_not_ready(False)
+        self.set_display_short_message1("System Ready")
+        self.set_display_short_message2("Enter Code")
 
-    def button4(self):
-        print("Button 4 pressed")
-        self.button_sequence += "4"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
+    def power_off(self):
+        """Power off the system."""
+        httpx.post(f"{self.SERVER_URL}/power-off/", json={"user_id": self.user_id})
+        self.state = ControlPanelState.POWERED_OFF
+        self.set_armed_led(False)
+        self.set_powered_led(False)
+        self.set_display_away(False)
+        self.set_display_stay(False)
+        self.set_display_not_ready(True)
+        self.set_display_short_message1("")
+        self.set_display_short_message2("")
 
-    def button5(self):
-        print("Button 5 pressed")
-        self.button_sequence += "5"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
+    def reset(self):
+        """Reset the system."""
+        self.power_off()
+        self.power_on()
+        self.set_display_short_message1("System Reset")
+        self.set_display_short_message2("Enter Code")
 
-    def button6(self):
-        print("Button 6 pressed")
-        self.button_sequence += "6"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
+    def arm(self):
+        """Arm the system."""
+        try:
+            response = httpx.post(f"{self.SERVER_URL}/arm/?user_id={self.user_id}")
+            response.raise_for_status()
+            self.set_armed_led(True)
+            self.set_display_away(True)
+            self.set_display_stay(False)
+            self.set_display_short_message1("System Armed")
+            self.set_display_short_message2("Choose Action")
+        except httpx.HTTPError:
+            self.set_display_short_message1("Fail Arming")
+            self.set_display_short_message2("Choose Action")
 
-    def button7(self):
-        print("Button 7 pressed")
-        self.button_sequence += "7"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
+    def disarm(self):
+        """Disarm the system."""
+        try:
+            response = httpx.post(f"{self.SERVER_URL}/disarm/?user_id={self.user_id}")
+            response.raise_for_status()
+            self.set_armed_led(False)
+            self.set_display_away(False)
+            self.set_display_stay(True)
+            self.set_display_short_message1("System Disarmed")
+            self.set_display_short_message2("Choose Action")
+        except httpx.HTTPError:
+            self.set_display_short_message1("Fail Disarming")
+            self.set_display_short_message2("Choose Action")
 
-    def button8(self):
-        print("Button 8 pressed")
-        self.button_sequence += "8"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
-
-    def button9(self):
-        print("Button 9 pressed")
-        self.button_sequence += "9"
-        self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
-
-    def button_star(self):
-        print("Button * pressed (Panic)")
+    def panic(self):
+        """Trigger panic alarm."""
         self.set_armed_led(True)
         self.set_display_short_message1("PANIC ALARM!")
         self.set_display_short_message2("Help on the way")
 
-    def button0(self):
-        print("Button 0 pressed")
-        self.button_sequence += "0"
+    def handle_number_input(self, number: str):
+        """Handle number input."""
+        self.button_sequence += number
         self.set_display_short_message2(f"Code: {self.button_sequence}")
-        self.check_password()
+        if self.state == ControlPanelState.IDLE:
+            self.check_password()
+        elif self.state == ControlPanelState.PASSWORD_CHANGE_CURRENT:
+            self.password_change_check_password()
+        elif self.state == ControlPanelState.PASSWORD_CHANGE_NEW:
+            self.password_change_new_password()
+        elif self.state == ControlPanelState.PASSWORD_CHANGE_RECONFIRM:
+            self.password_change_reconfirm_password()
+
+    def button1(self):
+        """Handle button 1 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("1")
+        elif self.state == ControlPanelState.POWERED_OFF:
+            self.power_on()
+
+    def button2(self):
+        """Handle button 2 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("2")
+        elif self.state == ControlPanelState.MASTER:
+            self.power_off()
+
+    def button3(self):
+        """Handle button 3 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("3")
+        elif self.state == ControlPanelState.MASTER:
+            self.reset()
+
+    def button4(self):
+        """Handle button 4 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("4")
+        elif self.state == ControlPanelState.MASTER:
+            self.arm()
+
+    def button5(self):
+        """Handle button 5 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("5")
+        elif self.state == ControlPanelState.MASTER:
+            self.disarm()
+
+    def button6(self):
+        """Handle button 6 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("6")
+        elif self.state == ControlPanelState.MASTER:
+            self.state = ControlPanelState.PASSWORD_CHANGE_CURRENT
+            self.button_sequence = ""
+            self.set_display_short_message1("Change Password")
+            self.set_display_short_message2("Enter Current Password")
+
+    def button7(self):
+        """Handle button 7 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("7")
+
+    def button8(self):
+        """Handle button 8 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("8")
+
+    def button9(self):
+        """Handle button 9 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("9")
+
+    def button_star(self):
+        """Handle button * press."""
+        if self.state == ControlPanelState.POWERED_OFF:
+            return
+        self.panic()
+
+    def button0(self):
+        """Handle button 0 press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
+        if self.state in (
+            ControlPanelState.IDLE,
+            ControlPanelState.PASSWORD_CHANGE_CURRENT,
+            ControlPanelState.PASSWORD_CHANGE_NEW,
+            ControlPanelState.PASSWORD_CHANGE_RECONFIRM,
+        ):
+            self.handle_number_input("0")
 
     def button_sharp(self):
+        """Handle button # press."""
+        if self.state == ControlPanelState.LOCKED:
+            return
         print("Button # pressed (Reset/Panic)")
         # Reset sequence
         self.button_sequence = ""
@@ -203,9 +403,5 @@ if __name__ == "__main__":
     root.withdraw()
 
     # Run the test control panel
-    app = TestControlPanel()
-    print("Control Panel GUI started")
-    print("Try entering code 1-2-3 to arm the system")
-    print("Press * for panic alarm")
-    print("Press # to reset")
+    app = ControlPanel()
     app.mainloop()
