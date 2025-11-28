@@ -2,16 +2,16 @@
 
 from fastapi import APIRouter, HTTPException
 
-from ..common.device import SafetyZone, AlarmType, SafeHomeModeType
+from ..common.device import AlarmType, SafetyZone
 from ..common.user import UserDB
 from .request import (
-    ReconfirmRequest, 
-    SafetyZoneRequest, 
-    SafeHomeModeRequest, 
-    SetModeRequest, 
-    AlarmEventRequest, 
-    ViewLogRequest, 
-    PanicRequest
+    AlarmEventRequest,
+    PanicRequest,
+    ReconfirmRequest,
+    SafeHomeModeRequest,
+    SafetyZoneRequest,
+    SetModeRequest,
+    ViewLogRequest,
 )
 
 router = APIRouter()
@@ -444,12 +444,14 @@ def configure_safehome_modes(request: SafeHomeModeRequest):
 
     # Update the mode configuration
     from ..common.device import SafeHomeMode
+
     user.safehome_modes[request.mode_type] = SafeHomeMode(
-        mode_type=request.mode_type,
-        enabled_device_ids=request.enabled_device_ids
+        mode_type=request.mode_type, enabled_device_ids=request.enabled_device_ids
     )
 
-    return {"message": f"SafeHome mode {request.mode_type.value} configured successfully"}
+    return {
+        "message": f"SafeHome mode {request.mode_type.value} configured successfully"
+    }
 
 
 @router.get(
@@ -478,12 +480,12 @@ def get_safehome_modes(user_id: str):
     for mode_type, mode_config in user.safehome_modes.items():
         modes_config[mode_type.value] = {
             "mode_type": mode_config.mode_type.value,
-            "enabled_device_ids": mode_config.enabled_device_ids
+            "enabled_device_ids": mode_config.enabled_device_ids,
         }
 
     return {
         "current_mode": user.current_mode.value,
-        "modes_configuration": modes_config
+        "modes_configuration": modes_config,
     }
 
 
@@ -523,7 +525,7 @@ def set_safehome_mode(request: SetModeRequest):
 
     # Apply mode configuration
     user.current_mode = request.mode_type
-    
+
     # Arm/disarm devices according to mode configuration
     for device in user.devices:
         device.is_armed = device.id in mode_config.enabled_device_ids
@@ -533,7 +535,7 @@ def set_safehome_mode(request: SetModeRequest):
     return {
         "message": f"SafeHome mode set to {request.mode_type.value}",
         "current_mode": user.current_mode.value,
-        "armed_devices": mode_config.enabled_device_ids
+        "armed_devices": mode_config.enabled_device_ids,
     }
 
 
@@ -559,12 +561,17 @@ def alarm_condition_encountered(request: AlarmEventRequest):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user ID")
 
+    # device_id가 실제로 존재하는지 확인
+    device = next((d for d in user.devices if d.id == request.device_id), None)
+    if not device:
+        raise HTTPException(status_code=400, detail="Device not found")
+
     # Record alarm event
     event_id = user.add_alarm_event(
         alarm_type=request.alarm_type,
         device_id=request.device_id,
         location=request.location,
-        description=request.description
+        description=request.description,
     )
 
     # Simulate alarm actions based on use case
@@ -574,8 +581,8 @@ def alarm_condition_encountered(request: AlarmEventRequest):
         "actions_taken": [
             "Audible alarm activated",
             "Event recorded in database",
-            "Control panel displays alarm condition"
-        ]
+            "Control panel displays alarm condition",
+        ],
     }
 
     # Add monitoring service call simulation after delay
@@ -583,7 +590,7 @@ def alarm_condition_encountered(request: AlarmEventRequest):
         response_data["actions_taken"].append(
             f"Monitoring service will be called after {user.delay_time} seconds delay"
         )
-    
+
     return response_data
 
 
@@ -613,31 +620,36 @@ def view_intrusion_log(request: ViewLogRequest):
     filtered_events = user.alarm_events
 
     if request.start_date:
-        filtered_events = [e for e in filtered_events if e.timestamp >= request.start_date]
-    
+        filtered_events = [
+            e for e in filtered_events if e.timestamp >= request.start_date
+        ]
+
     if request.end_date:
-        filtered_events = [e for e in filtered_events if e.timestamp <= request.end_date]
-    
+        filtered_events = [
+            e for e in filtered_events if e.timestamp <= request.end_date
+        ]
+
     if request.alarm_type:
-        filtered_events = [e for e in filtered_events if e.alarm_type == request.alarm_type]
+        filtered_events = [
+            e for e in filtered_events if e.alarm_type == request.alarm_type
+        ]
 
     # Convert to serializable format
     events_data = []
     for event in filtered_events:
-        events_data.append({
-            "id": event.id,
-            "timestamp": event.timestamp.isoformat(),
-            "alarm_type": event.alarm_type.value,
-            "device_id": event.device_id,
-            "location": event.location,
-            "description": event.description,
-            "is_resolved": event.is_resolved
-        })
+        events_data.append(
+            {
+                "id": event.id,
+                "timestamp": event.timestamp.isoformat(),
+                "alarm_type": event.alarm_type.value,
+                "device_id": event.device_id,
+                "location": event.location,
+                "description": event.description,
+                "is_resolved": event.is_resolved,
+            }
+        )
 
-    return {
-        "total_events": len(events_data),
-        "events": events_data
-    }
+    return {"total_events": len(events_data), "events": events_data}
 
 
 @router.post(
@@ -667,7 +679,7 @@ def panic_call_monitoring_service(request: PanicRequest):
         alarm_type=AlarmType.PANIC,
         device_id=None,
         location=request.location,
-        description="Panic button pressed by homeowner"
+        description="Panic button pressed by homeowner",
     )
 
     return {
@@ -677,9 +689,9 @@ def panic_call_monitoring_service(request: PanicRequest):
             "Panic alarm activated",
             "Monitoring service called immediately (no delay)",
             "Event logged in system",
-            "Emergency response dispatched"
+            "Emergency response dispatched",
         ],
-        "monitoring_service_status": "contacted"
+        "monitoring_service_status": "contacted",
     }
 
 
@@ -708,27 +720,28 @@ def configure_safety_zone_interface(user_id: str):
     # Return floor plan with existing safety zones and available devices
     safety_zones_data = []
     for zone in user.safety_zones:
-        safety_zones_data.append({
-            "name": zone.name,
-            "device_ids": [d.id for d in zone.devices],
-            "is_armed": zone.is_armed
-        })
+        safety_zones_data.append(
+            {
+                "name": zone.name,
+                "device_ids": [d.id for d in zone.devices],
+                "is_armed": zone.is_armed,
+            }
+        )
 
     available_devices = []
     for device in user.devices:
-        available_devices.append({
-            "id": device.id,
-            "type": device.type.value
-        })
+        available_devices.append({"id": device.id, "type": device.type.value})
 
     return {
         "message": "Safety zone configuration interface",
         "available_functions": [
             "create_new_safety_zone",
-            "delete_safety_zone", 
-            "update_safety_zone"
+            "delete_safety_zone",
+            "update_safety_zone",
         ],
         "existing_safety_zones": safety_zones_data,
         "available_devices": available_devices,
-        "floor_plan_info": "Floor plan with safety zones and device locations displayed"
+        "floor_plan_info": (
+            "Floor plan with safety zones and device locations displayed"
+        ),
     }
