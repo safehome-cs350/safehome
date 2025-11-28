@@ -33,11 +33,12 @@ class SurveillanceAPIClient:
             error_detail = response.json().get("detail", "Failed to list cameras")
             raise requests.HTTPError(f"{response.status_code}: {error_detail}")
 
-    def get_camera_view(self, camera_id: int) -> dict:
+    def get_camera_view(self, camera_id: int, password: Optional[str] = None) -> dict:
         """Get camera view with current settings.
 
         Args:
             camera_id: Camera identifier
+            password: Optional password if camera is password protected
 
         Returns:
             Camera view data including base64 image
@@ -46,7 +47,10 @@ class SurveillanceAPIClient:
             requests.HTTPException: If request fails
         """
         url = f"{self.base_url}/surveillance/cameras/{camera_id}/view"
-        response = requests.get(url)
+        params = {}
+        if password is not None:
+            params["password"] = password
+        response = requests.get(url, params=params)
         if response.status_code == 200:
             return response.json()
         else:

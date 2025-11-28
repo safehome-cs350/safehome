@@ -26,6 +26,7 @@ class SurveillancePanel(ttk.Frame):
         self.current_camera = None
         self.current_pan = 0
         self.current_zoom = 2
+        self.camera_passwords = {}
 
         self.setup_ui()
         self.load_cameras()
@@ -197,7 +198,8 @@ class SurveillancePanel(ttk.Frame):
     def on_canvas_resize(self, event):
         """Handle canvas resize event."""
         if self.current_camera:
-            self.load_camera_view(self.current_camera)
+            password = self.camera_passwords.get(self.current_camera)
+            self.load_camera_view(self.current_camera, password=password)
 
     def load_cameras(self):
         """Load cameras from the API."""
@@ -255,18 +257,6 @@ class SurveillancePanel(ttk.Frame):
         if cam_id in self.cameras:
             camera = self.cameras[cam_id]
 
-            if camera["has_password"]:
-                password = simpledialog.askstring(
-                    "Camera Password",
-                    f"Enter password for {camera['name']}:",
-                    show="*",
-                )
-                if not password:
-                    self.camera_tree.selection_remove(selected[0])
-                    return
-                # Note: Backend doesn't validate password on view,
-                # so we just proceed if password is entered
-
             if not camera["is_enabled"]:
                 messagebox.showinfo(
                     "Camera Disabled", "This camera is currently disabled"
@@ -279,13 +269,34 @@ class SurveillancePanel(ttk.Frame):
                 )
                 return
 
-            self.current_camera = cam_id
-            self.load_camera_view(cam_id)
+            password = None
+            if camera["has_password"]:
+                if cam_id in self.camera_passwords:
+                    password = self.camera_passwords[cam_id]
+                else:
+                    password = simpledialog.askstring(
+                        "Camera Password",
+                        f"Enter password for {camera['name']}:",
+                        show="*",
+                    )
+                    if not password:
+                        self.camera_tree.selection_remove(selected[0])
+                        return
+                    # Store password for this session
+                    self.camera_passwords[cam_id] = password
 
-    def load_camera_view(self, cam_id):
-        """Load and display the camera view from API."""
+            self.current_camera = cam_id
+            self.load_camera_view(cam_id, password)
+
+    def load_camera_view(self, cam_id, password=None):
+        """Load and display the camera view from API.
+
+        Args:
+            cam_id: Camera identifier
+            password: Optional password if camera is password protected
+        """
         try:
-            response = self.api_client.get_camera_view(cam_id)
+            response = self.api_client.get_camera_view(cam_id, password=password)
             camera = self.cameras[cam_id]
 
             self.current_pan = response.get("pan_position", 0)
@@ -352,6 +363,19 @@ class SurveillancePanel(ttk.Frame):
             error_message = str(e)
             if "400" in error_message:
                 messagebox.showerror("Error", "Camera is disabled")
+            elif "401" in error_message:
+                # Password error - clear cached password and reselect
+                if cam_id in self.camera_passwords:
+                    del self.camera_passwords[cam_id]
+                if "Password required" in error_message:
+                    messagebox.showerror(
+                        "Error", "Password required to view this camera"
+                    )
+                elif "Incorrect password" in error_message:
+                    messagebox.showerror("Error", "Incorrect password")
+                # Clear selection to allow retry
+                for item in self.camera_tree.selection():
+                    self.camera_tree.selection_remove(item)
             elif "404" in error_message:
                 messagebox.showerror("Error", "Camera not found")
             elif "Connection" in error_message or "refused" in error_message.lower():
@@ -392,7 +416,8 @@ class SurveillancePanel(ttk.Frame):
             self.current_zoom = response.get("zoom_level", self.current_zoom)
             self.zoom_label.config(text=str(self.current_zoom))
             if response.get("success"):
-                self.load_camera_view(self.current_camera)
+                password = self.camera_passwords.get(self.current_camera)
+                self.load_camera_view(self.current_camera, password=password)
             else:
                 messagebox.showwarning(
                     "Warning", response.get("message", "Zoom limit reached")
@@ -418,7 +443,8 @@ class SurveillancePanel(ttk.Frame):
             self.current_zoom = response.get("zoom_level", 2)
             self.zoom_label.config(text=str(self.current_zoom))
             if response.get("success"):
-                self.load_camera_view(self.current_camera)
+                password = self.camera_passwords.get(self.current_camera)
+                self.load_camera_view(self.current_camera, password=password)
         except Exception as e:
             error_message = str(e)
             if "Connection" in error_message or "refused" in error_message.lower():
@@ -445,7 +471,8 @@ class SurveillancePanel(ttk.Frame):
             self.current_pan = response.get("pan_position", self.current_pan)
             self.pan_label.config(text=str(self.current_pan))
             if response.get("success"):
-                self.load_camera_view(self.current_camera)
+                password = self.camera_passwords.get(self.current_camera)
+                self.load_camera_view(self.current_camera, password=password)
             else:
                 messagebox.showwarning(
                     "Warning", response.get("message", "Pan limit reached")
@@ -471,7 +498,8 @@ class SurveillancePanel(ttk.Frame):
             self.current_pan = response.get("pan_position", 0)
             self.pan_label.config(text=str(self.current_pan))
             if response.get("success"):
-                self.load_camera_view(self.current_camera)
+                password = self.camera_passwords.get(self.current_camera)
+                self.load_camera_view(self.current_camera, password=password)
         except Exception as e:
             error_message = str(e)
             if "Connection" in error_message or "refused" in error_message.lower():
