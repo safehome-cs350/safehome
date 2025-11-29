@@ -479,21 +479,19 @@ async def delete_camera_password(camera_id: int):
 
 @router.get(
     "/cameras/{camera_id}/thumbnails",
-    response_model=List[ThumbnailShot],
-    summary="UC1.f. Get camera thumbnail history",
+    response_model=ThumbnailShot,
+    summary="UC1.f. Get camera thumbnail",
     responses={
         200: {
-            "description": "Successfully retrieved camera thumbnails",
+            "description": "Successfully retrieved camera thumbnail",
             "content": {
                 "application/json": {
-                    "example": [
-                        {
-                            "id": 101,
-                            "camera_id": 1,
-                            "captured_at": "2025-11-19T10:00:00Z",
-                            "image_url": "https://example.com/thumbs/1_1.jpg",
-                        }
-                    ]
+                    "example": {
+                        "id": 101,
+                        "camera_id": 1,
+                        "captured_at": "2025-11-19T10:00:00Z",
+                        "image_url": "/camera1.jpg",
+                    }
                 }
             },
         },
@@ -506,25 +504,18 @@ async def delete_camera_password(camera_id: int):
     },
 )
 async def list_thumbnails(camera_id: int):
-    """List camera thumbnail history."""
+    """Get camera thumbnail (only one per camera)."""
     validate_camera_exists(camera_id)
 
-    fake_thumbnails = [
-        ThumbnailShot(
-            id=100 + camera_id,
-            camera_id=camera_id,
-            captured_at="2025-11-19T10:00:00Z",
-            image_url=f"https://example.com/thumbs/{camera_id}_1.jpg",
-        ),
-        ThumbnailShot(
-            id=200 + camera_id,
-            camera_id=camera_id,
-            captured_at="2025-11-19T11:00:00Z",
-            image_url=f"https://example.com/thumbs/{camera_id}_2.jpg",
-        ),
-    ]
+    url = CameraDB.get_url(camera_id)
+    thumbnail = ThumbnailShot(
+        id=100 + camera_id,
+        camera_id=camera_id,
+        captured_at="2025-11-19T10:00:00Z",
+        image_url=url,
+    )
 
-    return fake_thumbnails
+    return thumbnail
 
 
 @router.post(

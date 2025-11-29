@@ -241,13 +241,9 @@ class TestThumbnails:
         assert response.status_code == 200
 
         data = response.json()
-        assert isinstance(data, list)
-
-        if len(data) > 0:
-            thumbnail = data[0]
-            required_fields = ["id", "camera_id", "captured_at", "image_url"]
-            for field in required_fields:
-                assert field in thumbnail
+        required_fields = ["id", "camera_id", "captured_at", "image_url"]
+        for field in required_fields:
+            assert field in data
 
 
 class TestSensors:
