@@ -19,6 +19,7 @@ class ControlPanelState(Enum):
     PASSWORD_CHANGE_RECONFIRM = 5
     LOCKED = 6
     POWERED_OFF = 7
+    ALARMED = 8
 
 
 class ControlPanel(DeviceControlPanelAbstract):
@@ -40,6 +41,7 @@ class ControlPanel(DeviceControlPanelAbstract):
         self.user_id = "homeowner1"
         self.new_password = ""
         self.fail_count = 0
+        self.poll_alarm_loop()
 
     def handle_wrong_password(self):
         """Handle wrong password."""
@@ -228,6 +230,15 @@ class ControlPanel(DeviceControlPanelAbstract):
         self.set_display_short_message1("PANIC ALARM!")
         self.set_display_short_message2("Help on the way")
 
+    def poll_alarm(self):
+        """Poll alarm from server."""
+        pass
+
+    def poll_alarm_loop(self):
+        """Loop to poll alarm every second."""
+        self.poll_alarm()
+        self.after(1000, self.poll_alarm_loop)
+
     def handle_number_input(self, number: str):
         """Handle number input."""
         self.button_sequence += number
@@ -386,9 +397,9 @@ class ControlPanel(DeviceControlPanelAbstract):
         """Handle button # press."""
         if self.state == ControlPanelState.LOCKED:
             return
-        print("Button # pressed (Reset/Panic)")
         # Reset sequence
         self.button_sequence = ""
+        self.state = ControlPanelState.IDLE
         self.set_armed_led(False)
         self.set_display_away(False)
         self.set_display_stay(False)
@@ -397,7 +408,7 @@ class ControlPanel(DeviceControlPanelAbstract):
         self.set_display_short_message2("Enter Code")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Create root window and hide it
     root = tk.Tk()
     root.withdraw()

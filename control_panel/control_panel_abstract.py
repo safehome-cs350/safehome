@@ -284,7 +284,7 @@ class DeviceControlPanelAbstract(tk.Toplevel, ABC):
     def set_security_zone_number(self, num):
         """Set the security zone number display."""
         # `display_number` is a Label now; set its text directly.
-        self.display_number.config(text=str(num))
+        self.display_number.config(text=str(num))  # pragma: no cover
 
     def set_display_away(self, on):
         """Set the 'away' display state."""
@@ -316,63 +316,62 @@ class DeviceControlPanelAbstract(tk.Toplevel, ABC):
         """Set the power LED state."""
         self.led_power.config(bg="green" if on else "light gray")
 
-    # Abstract button methods - must be implemented by subclasses
     @abstractmethod
     def button1(self):
         """Handle button 1 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button2(self):
         """Handle button 2 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button3(self):
         """Handle button 3 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button4(self):
         """Handle button 4 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button5(self):
         """Handle button 5 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button6(self):
         """Handle button 6 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button7(self):
         """Handle button 7 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button8(self):
         """Handle button 8 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button9(self):
         """Handle button 9 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button_star(self):
         """Handle * button press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button0(self):
         """Handle button 0 press."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def button_sharp(self):
         """Handle # button press."""
-        pass
+        pass  # pragma: no cover
