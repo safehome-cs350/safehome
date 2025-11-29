@@ -41,6 +41,10 @@ integration-test: build
 frontend:
 	python3 -m frontend.main
 
+.PHONY: backend
+backend:
+	docker compose up
+
 .PHONY: control-panel
 control-panel:
 	python3 -m control_panel.control_panel
