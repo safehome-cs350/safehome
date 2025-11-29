@@ -1,8 +1,16 @@
 """User."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 
-from .device import Device, DeviceType, SafetyZone
+from .device import (
+    AlarmEvent,
+    Device,
+    DeviceType,
+    SafeHomeMode,
+    SafeHomeModeType,
+    SafetyZone,
+)
 
 
 @dataclass
@@ -24,9 +32,38 @@ class User:
     devices: list[Device]
     safety_zones: list[SafetyZone]
 
+    # SafeHome modes configuration
+    safehome_modes: dict[SafeHomeModeType, SafeHomeMode] = field(default_factory=dict)
+    current_mode: SafeHomeModeType = SafeHomeModeType.HOME
+
+    # Alarm events log
+    alarm_events: list[AlarmEvent] = field(default_factory=list)
+
+    # System status
+    is_system_armed: bool = False
+    doors_windows_closed: bool = True
+    login_attempts: int = 0
+    last_failed_login: datetime | None = None
+
     def find_device_by_id(self, device_id: int) -> Device | None:
         """Find a device by ID."""
         return next((d for d in self.devices if d.id == device_id), None)
+
+    def add_alarm_event(
+        self, alarm_type, device_id: int | None, location: str, description: str
+    ) -> int:
+        """Add an alarm event and return its ID."""
+        event_id = len(self.alarm_events) + 1
+        event = AlarmEvent(
+            id=event_id,
+            timestamp=datetime.now(),
+            alarm_type=alarm_type,
+            device_id=device_id,
+            location=location,
+            description=description,
+        )
+        self.alarm_events.append(event)
+        return event_id
 
 
 class UserDB:
@@ -49,6 +86,19 @@ class UserDB:
                 Device(type=DeviceType.CAMERA, id=3),
             ],
             safety_zones=[],
+            safehome_modes={
+                SafeHomeModeType.HOME: SafeHomeMode(SafeHomeModeType.HOME, []),
+                SafeHomeModeType.AWAY: SafeHomeMode(SafeHomeModeType.AWAY, [1, 2, 3]),
+                SafeHomeModeType.OVERNIGHT_TRAVEL: SafeHomeMode(
+                    SafeHomeModeType.OVERNIGHT_TRAVEL, [1, 2, 3]
+                ),
+                SafeHomeModeType.EXTENDED_TRAVEL: SafeHomeMode(
+                    SafeHomeModeType.EXTENDED_TRAVEL, [1, 2, 3]
+                ),
+                SafeHomeModeType.GUEST_HOME: SafeHomeMode(
+                    SafeHomeModeType.GUEST_HOME, [1, 2]
+                ),
+            },
         )
     ]
 
