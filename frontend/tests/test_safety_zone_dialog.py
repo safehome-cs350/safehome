@@ -33,7 +33,9 @@ class TestSafetyZoneDialog:
             "device_ids": [1],
         }
 
-        dialog = SafetyZoneDialog(root, zone_data, available_devices=[{"id": 1, "type": "sensor"}])
+        dialog = SafetyZoneDialog(
+            root, zone_data, available_devices=[{"id": 1, "type": "sensor"}]
+        )
 
         assert dialog.title() == "Edit Safety Zone"
         assert dialog.name_entry.get() == "Test Zone"
@@ -77,7 +79,9 @@ class TestSafetyZoneDialog:
         root = tk.Tk()
         root.withdraw()
 
-        dialog = SafetyZoneDialog(root, None, available_devices=[{"id": 1, "type": "sensor"}])
+        dialog = SafetyZoneDialog(
+            root, None, available_devices=[{"id": 1, "type": "sensor"}]
+        )
         dialog.name_entry.insert(0, "Test Zone")
         dialog.ok_clicked()
 
@@ -92,7 +96,9 @@ class TestSafetyZoneDialog:
         root = tk.Tk()
         root.withdraw()
 
-        dialog = SafetyZoneDialog(root, None, available_devices=[{"id": 1, "type": "sensor"}])
+        dialog = SafetyZoneDialog(
+            root, None, available_devices=[{"id": 1, "type": "sensor"}]
+        )
         dialog.name_entry.insert(0, "Test Zone")
         dialog.device_listbox.selection_set(0)
 
