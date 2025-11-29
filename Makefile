@@ -26,10 +26,6 @@ control-panel-unit-test: build
 		coverage xml -o control-panel-coverage.xml && \
 		coverage report -m"
 
-.PHONY: control-panel
-control-panel:
-	python3 -m control_panel.control_panel
-
 .PHONY: integration-test
 integration-test: build
 	docker run --rm -v $(WORKSPACE):/workspace -w /workspace $(IMAGE_NAME) \
@@ -40,3 +36,11 @@ integration-test: build
 			xvfb-run -a pytest tests/integration_tests -v; \
 			kill \$$SERVER_PID; \
 			wait \$$SERVER_PID || true"
+
+.PHONY: frontend
+frontend:
+	python3 -m frontend.main
+
+.PHONY: control-panel
+control-panel:
+	python3 -m control_panel.control_panel

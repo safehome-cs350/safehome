@@ -8,6 +8,7 @@ import pytest
 from control_panel.control_panel import ControlPanel, ControlPanelState
 from frontend.configuration_panel import ConfigurationPanel
 from frontend.login_window import LoginWindow
+from frontend.surveillance_panel import SurveillancePanel
 
 
 @pytest.fixture
@@ -156,3 +157,98 @@ def test_uc_1g():
     control_panel.button3()
     control_panel.button4()
     assert control_panel.state == ControlPanelState.MASTER
+
+
+def test_uc_2a():
+    """Test for UC2.a. Arm/disarm system through control panel."""
+    control_panel = ControlPanel()
+
+    control_panel.button1()
+    control_panel.button2()
+    control_panel.button3()
+    control_panel.button4()
+    assert control_panel.state == ControlPanelState.MASTER
+
+    with patch.object(control_panel, "set_armed_led") as mock_armed_led:
+        control_panel.button4()
+        mock_armed_led.assert_called_once_with(True)
+
+    with patch.object(control_panel, "set_armed_led") as mock_armed_led:
+        control_panel.button5()
+        mock_armed_led.assert_called_once_with(False)
+
+
+def test_uc_3a(tk_root):
+    """Test for UC3.a. Display Specific camera view."""
+    pass
+
+
+def test_uc_3c(tk_root):
+    """Test for UC3.c. Set camera password."""
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[0]
+    panel.camera_tree.selection_set(item)
+
+    with (
+        patch("tkinter.simpledialog.askstring", return_value="1234"),
+        patch("tkinter.messagebox.showinfo") as mock_showinfo,
+    ):
+        panel.set_camera_password()
+
+    mock_showinfo.assert_called_once_with("Success", "Camera password set")
+
+
+def test_uc_3d(tk_root):
+    """Test for UC3.d. Delete camera password."""
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[1]
+    panel.camera_tree.selection_set(item)
+
+    with (
+        patch("tkinter.messagebox.askyesno", return_value=True),
+        patch("tkinter.messagebox.showinfo") as mock_showinfo,
+    ):
+        panel.delete_camera_password()
+
+    mock_showinfo.assert_called_once_with("Success", "Camera password deleted")
+
+
+def test_uc_3e(tk_root):
+    """Test for UC3.e. View thumbnail Shots."""
+    pass
+
+
+def test_uc_3f(tk_root):
+    """Test for UC3.f. Enable camera."""
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[2]
+    panel.camera_tree.selection_set(item)
+
+    with patch("tkinter.messagebox.showinfo") as mock_showinfo:
+        panel.enable_camera()
+
+    mock_showinfo.assert_called_once_with("Success", "Camera enabled")
+
+
+def test_uc_3g(tk_root):
+    """Test for UC3.g. Disable camera."""
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[0]
+    panel.camera_tree.selection_set(item)
+
+    with patch("tkinter.messagebox.showinfo") as mock_showinfo:
+        panel.disable_camera()
+
+    mock_showinfo.assert_called_once_with("Success", "Camera disabled")
