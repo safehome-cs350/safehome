@@ -18,3 +18,14 @@ frontend-unit-test: build
 		bash -c "xvfb-run -a coverage run --source=frontend -m pytest frontend/tests && \
 		coverage xml -o frontend-coverage.xml && \
 		coverage report -m"
+
+.PHONY: control-panel-unit-test
+control-panel-unit-test: build
+	docker run --rm -v $(WORKSPACE):/workspace -w /workspace $(IMAGE_NAME) \
+		bash -c "xvfb-run -a coverage run --source=control_panel -m pytest control_panel/tests/unit_tests -v && \
+		coverage xml -o control-panel-coverage.xml && \
+		coverage report -m"
+
+.PHONY: control-panel
+control-panel:
+	python3 -m control_panel.control_panel

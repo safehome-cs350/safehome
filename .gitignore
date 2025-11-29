@@ -3,5 +3,4 @@ __pycache__
 .vscode
 .coverage
 .venv
-backend-coverage.xml
-frontend-coverage.xml
+*.xml
