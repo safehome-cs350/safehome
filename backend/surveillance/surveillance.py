@@ -1,6 +1,5 @@
 """Surveillance module for handling camera and sensor operations."""
 
-import base64
 import os
 import sys
 import threading
@@ -108,17 +107,6 @@ def get_or_create_camera(camera_id: int) -> DeviceCamera:
             camera_instances[camera_id] = DeviceCamera()
             camera_instances[camera_id].set_id(camera_id)
         return camera_instances[camera_id]
-
-
-def load_camera_png_as_base64() -> str:
-    """Load camera image and return as base64 string."""
-    camera_png_path = os.path.join(os.path.dirname(__file__), "../../img/camera.png")
-    try:
-        with open(camera_png_path, "rb") as image_file:
-            img_str = base64.b64encode(image_file.read()).decode()
-            return img_str
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Camera image not found") from None
 
 
 # Default user for demo purposes - in real implementation this would come
