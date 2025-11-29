@@ -7,13 +7,20 @@ from tkinter import messagebox, ttk
 class SafetyZoneDialog(tk.Toplevel):
     """Dialog for safety zone creation and editing."""
 
-    def __init__(self, parent, zone_data=None):
-        """Initialize the safety zone dialog."""
+    def __init__(self, parent, zone_data=None, available_devices=None):
+        """Initialize the safety zone dialog.
+
+        Args:
+            parent: Parent window
+            zone_data: Existing zone data dict with 'name' and 'device_ids' keys
+            available_devices: List of device dicts with 'id' and 'type' keys
+        """
         super().__init__(parent)
         self.result = None
+        self.available_devices = available_devices or []
 
-        self.title("Safety Zone" if zone_data else "Create Safety Zone")
-        self.geometry("400x300")
+        self.title("Edit Safety Zone" if zone_data else "Create Safety Zone")
+        self.geometry("400x350")
         self.resizable(False, False)
 
         self.center_window()
@@ -32,40 +39,39 @@ class SafetyZoneDialog(tk.Toplevel):
         if zone_data:
             self.name_entry.insert(0, zone_data.get("name", ""))
 
-        ttk.Label(main_frame, text="Sensors:").grid(
+        ttk.Label(main_frame, text="Devices:").grid(
             row=1, column=0, sticky=tk.W, pady=5
         )
-        sensor_frame = ttk.Frame(main_frame)
-        sensor_frame.grid(row=1, column=1, pady=5, padx=5, sticky=tk.W)
+        device_frame = ttk.Frame(main_frame)
+        device_frame.grid(row=1, column=1, pady=5, padx=5, sticky=tk.W)
 
-        self.sensor_listbox = tk.Listbox(
-            sensor_frame, height=6, width=30, selectmode=tk.MULTIPLE
+        self.device_listbox = tk.Listbox(
+            device_frame, height=8, width=30, selectmode=tk.MULTIPLE
         )
-        self.sensor_listbox.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.device_listbox.pack(side=tk.LEFT, fill=tk.BOTH)
 
         scrollbar = ttk.Scrollbar(
-            sensor_frame, orient=tk.VERTICAL, command=self.sensor_listbox.yview
+            device_frame, orient=tk.VERTICAL, command=self.device_listbox.yview
         )
-        self.sensor_listbox.configure(yscrollcommand=scrollbar.set)
+        self.device_listbox.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        sample_sensors = [
-            "Door Sensor 1",
-            "Door Sensor 2",
-            "Window Sensor 1",
-            "Window Sensor 2",
-            "Motion Detector 1",
-            "Motion Detector 2",
-            "Motion Detector 3",
-        ]
-        for sensor in sample_sensors:
-            self.sensor_listbox.insert(tk.END, sensor)
+        # Populate device listbox
+        for device in self.available_devices:
+            device_id = device.get("id", "")
+            device_type = device.get("type", "")
+            display_text = f"Device {device_id} ({device_type})"
+            self.device_listbox.insert(tk.END, display_text)
 
+        # Store device IDs for each listbox item
+        self.device_ids = [device.get("id") for device in self.available_devices]
+
+        # Select devices if editing existing zone
         if zone_data:
-            sensors = zone_data.get("sensors", [])
-            for i, sensor in enumerate(sample_sensors):
-                if sensor in sensors:
-                    self.sensor_listbox.selection_set(i)
+            existing_device_ids = zone_data.get("device_ids", [])
+            for i, device_id in enumerate(self.device_ids):
+                if device_id in existing_device_ids:
+                    self.device_listbox.selection_set(i)
 
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
@@ -95,17 +101,17 @@ class SafetyZoneDialog(tk.Toplevel):
             messagebox.showerror("Error", "Please enter a zone name")
             return
 
-        selected_indices = self.sensor_listbox.curselection()
-        sensors = [self.sensor_listbox.get(i) for i in selected_indices]
-
-        if not sensors:
-            messagebox.showerror("Error", "Please select at least one sensor")
+        selected_indices = self.device_listbox.curselection()
+        if not selected_indices:
+            messagebox.showerror("Error", "Please select at least one device")
             return
+
+        # Get device IDs for selected devices
+        selected_device_ids = [self.device_ids[i] for i in selected_indices]
 
         self.result = {
             "name": name,
-            "sensors": sensors,
-            "armed": False,
+            "device_ids": selected_device_ids,
         }
         self.destroy()
 

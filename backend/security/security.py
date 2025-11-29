@@ -69,7 +69,21 @@ def get_safety_zones(user_id: str):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user ID")
 
-    return {"safety_zones": user.safety_zones}
+    # Convert SafetyZone dataclass objects to serializable format
+    safety_zones_data = []
+    for zone in user.safety_zones:
+        safety_zones_data.append(
+            {
+                "name": zone.name,
+                "devices": [
+                    {"id": device.id, "type": device.type.value}
+                    for device in zone.devices
+                ],
+                "is_armed": zone.is_armed,
+            }
+        )
+
+    return {"safety_zones": safety_zones_data}
 
 
 @router.post(
