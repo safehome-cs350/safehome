@@ -22,6 +22,7 @@ class SecurityPanel(ttk.Frame):
         self.safety_zones = {}  # name -> zone data
         self.available_devices = []  # List of device dicts with id and type
         self.intrusion_log = []
+        self._loading_mode = False  # Flag to prevent saving during load
 
         self.setup_ui()
         self.load_data()
@@ -35,6 +36,7 @@ class SecurityPanel(ttk.Frame):
         mode_frame.pack(fill=tk.X, pady=10)
 
         self.mode_var = tk.StringVar(value="away")
+        self.mode_var.trace_add("write", self.on_mode_change)
         modes = [
             ("Away", "away"),
             ("Stay", "home"),
@@ -205,7 +207,10 @@ class SecurityPanel(ttk.Frame):
             # Load SafeHome modes
             modes_response = self.api_client.get_safehome_modes(self.app.current_user)
             self.current_mode = modes_response.get("current_mode", "away")
+            # Set flag to prevent saving during load
+            self._loading_mode = True
             self.mode_var.set(self.current_mode)
+            self._loading_mode = False
 
             # Load intrusion log
             self.load_intrusion_log()
@@ -641,3 +646,46 @@ class SecurityPanel(ttk.Frame):
 
         for entry in self.intrusion_log:
             self.log_tree.insert("", tk.END, values=entry)
+
+    def on_mode_change(self, *args):
+        """Handle mode change event - save mode to backend."""
+        if not self.app.current_user:
+            return
+
+        # Skip if this is during initialization
+        if self._loading_mode or self.current_mode is None:
+            return
+
+        new_mode = self.mode_var.get()
+        # Only save if mode actually changed
+        if new_mode != self.current_mode:
+            try:
+                response = self.api_client.set_safehome_mode(
+                    self.app.current_user, new_mode
+                )
+                self.current_mode = response.get("current_mode", new_mode)
+                self.system_armed = response.get("is_system_armed", False)
+                self.app.update_status(f"Mode changed to {self.current_mode.title()}")
+                # Reload data to ensure consistency
+                self.load_data()
+            except Exception as e:
+                error_message = str(e)
+                # Revert to previous mode on error
+                self.mode_var.set(self.current_mode)
+                if "doors and windows not closed" in error_message:
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot set mode: doors and windows not closed",
+                    )
+                elif (
+                    "Connection" in error_message or "refused" in error_message.lower()
+                ):
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running.",
+                    )
+                else:
+                    messagebox.showerror(
+                        "Error", f"Failed to set mode: {error_message}"
+                    )
