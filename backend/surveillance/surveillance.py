@@ -248,9 +248,15 @@ async def list_cameras():
             },
         },
         400: {
-            "description": "Camera is disabled",
+            "description": "Camera is disabled or password required/incorrect",
             "content": {
                 "application/json": {"example": {"detail": "Camera is disabled"}}
+            },
+        },
+        401: {
+            "description": "Password required or incorrect",
+            "content": {
+                "application/json": {"example": {"detail": "Password required"}}
             },
         },
         404: {
@@ -269,12 +275,25 @@ async def list_cameras():
         },
     },
 )
-async def display_camera_view(camera_id: int):
-    """Display camera view with current settings."""
+async def display_camera_view(camera_id: int, password: str | None = None):
+    """Display camera view with current settings.
+
+    Args:
+        camera_id: Camera identifier
+        password: Optional password if camera is password protected
+    """
     camera = get_camera_info(camera_id)
 
     if not camera.is_enabled:
         raise HTTPException(status_code=400, detail="Camera is disabled")
+
+    if camera.has_password:
+        if not password:
+            raise HTTPException(
+                status_code=401, detail="Password required to view this camera"
+            )
+        if camera.password != password:
+            raise HTTPException(status_code=401, detail="Incorrect password")
 
     try:
         device_camera = get_or_create_camera(camera_id)
@@ -425,7 +444,7 @@ async def set_camera_password(camera_id: int, req: CameraPasswordRequest):
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
 
-    CameraDB.update_camera(camera_id, has_password=True)
+    CameraDB.update_camera(camera_id, has_password=True, password=req.password)
     return CameraPasswordStatus(camera_id=camera_id, has_password=True)
 
 
@@ -454,7 +473,7 @@ async def delete_camera_password(camera_id: int):
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
 
-    CameraDB.update_camera(camera_id, has_password=False)
+    CameraDB.update_camera(camera_id, has_password=False, password=None)
     return CameraPasswordStatus(camera_id=camera_id, has_password=False)
 
 

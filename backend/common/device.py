@@ -38,6 +38,7 @@ class CameraInfo:
     is_enabled: bool
     is_online: bool = True
     has_password: bool = False
+    password: str | None = None
 
 
 @dataclass
@@ -63,6 +64,7 @@ class CameraDB:
             location="거실",
             is_enabled=True,
             has_password=False,
+            password=None,
         ),
         2: CameraInfo(
             camera_id=2,
@@ -70,6 +72,7 @@ class CameraDB:
             location="현관",
             is_enabled=True,
             has_password=True,
+            password="camera123",
         ),
         3: CameraInfo(
             camera_id=3,
@@ -77,6 +80,7 @@ class CameraDB:
             location="침실",
             is_enabled=False,
             has_password=False,
+            password=None,
         ),
     }
 
