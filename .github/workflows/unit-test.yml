@@ -44,3 +44,41 @@ jobs:
           fail_ci_if_error: true
           flags: frontend-unit-tests
           token: ${{ secrets.CODECOV_TOKEN }}
+  control-panel-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dev Container CLI
+        uses: devcontainers/ci@v0.3
+      - name: Start devcontainer
+        run: devcontainer up --workspace-folder .
+      - name: Run control panel unit tests
+        run: |
+          devcontainer exec --workspace-folder . xvfb-run -a coverage run --source=control_panel -m pytest control_panel/tests/unit_tests -v
+          devcontainer exec --workspace-folder . coverage xml -o control-panel-coverage.xml
+          devcontainer exec --workspace-folder . coverage report -m
+      - name: Upload control panel coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: control-panel-coverage.xml
+          fail_ci_if_error: true
+          flags: control-panel-unit-tests
+          token: ${{ secrets.CODECOV_TOKEN }}
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dev Container CLI
+        uses: devcontainers/ci@v0.3
+      - name: Start devcontainer
+        run: devcontainer up --workspace-folder .
+      - name: Run integration tests
+        run: |
+          devcontainer exec --workspace-folder . bash -c "
+            uvicorn backend.app:app --host 0.0.0.0 --port 8000 --log-level warning --no-access-log &
+            SERVER_PID=\$!
+            until nc -z localhost 8000; do sleep 0.1; done
+            xvfb-run -a pytest tests/integration_tests -v
+            kill \$SERVER_PID
+            wait \$SERVER_PID || true
+          "
