@@ -31,37 +31,6 @@ class SecurityPanel(ttk.Frame):
         left_frame = ttk.LabelFrame(self, text="System Control", padding=10)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        status_frame = ttk.Frame(left_frame)
-        status_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Label(status_frame, text="System Status:", font=("Arial", 10, "bold")).pack(
-            side=tk.LEFT
-        )
-        self.status_label = ttk.Label(
-            status_frame,
-            text="DISARMED",
-            font=("Arial", 12, "bold"),
-            foreground="green",
-        )
-        self.status_label.pack(side=tk.LEFT, padx=10)
-
-        control_frame = ttk.Frame(left_frame)
-        control_frame.pack(fill=tk.X, pady=10)
-
-        self.arm_btn = ttk.Button(
-            control_frame, text="Arm System", command=self.arm_system, width=20
-        )
-        self.arm_btn.pack(pady=5)
-
-        self.disarm_btn = ttk.Button(
-            control_frame,
-            text="Disarm System",
-            command=self.disarm_system,
-            width=20,
-            state=tk.DISABLED,
-        )
-        self.disarm_btn.pack(pady=5)
-
         mode_frame = ttk.LabelFrame(left_frame, text="System Modes", padding=10)
         mode_frame.pack(fill=tk.X, pady=10)
 
@@ -311,9 +280,6 @@ class SecurityPanel(ttk.Frame):
                 )
                 self.system_armed = True
                 self.current_mode = response.get("current_mode", mode_type)
-                self.status_label.config(text="ARMED", foreground="red")
-                self.arm_btn.config(state=tk.DISABLED)
-                self.disarm_btn.config(state=tk.NORMAL)
                 self.app.update_status(
                     f"System Armed - Mode: {self.current_mode.title()}"
                 )
@@ -353,9 +319,6 @@ class SecurityPanel(ttk.Frame):
             try:
                 self.api_client.disarm(self.app.current_user)
                 self.system_armed = False
-                self.status_label.config(text="DISARMED", foreground="green")
-                self.arm_btn.config(state=tk.NORMAL)
-                self.disarm_btn.config(state=tk.DISABLED)
                 self.app.update_status("System Disarmed")
                 messagebox.showinfo("Success", "System disarmed successfully")
                 self.load_data()  # Reload to get updated state
