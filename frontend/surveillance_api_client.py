@@ -187,3 +187,215 @@ class SurveillanceAPIClient:
         else:
             error_detail = response.json().get("detail", "Failed to disable camera")
             raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    # Sensor API methods
+
+    def list_sensors(self) -> dict:
+        """List all available sensors.
+
+        Returns:
+            Dictionary with sensors list
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get("detail", "Failed to list sensors")
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def arm_motion_sensor(self, sensor_id: int) -> dict:
+        """Arm a motion sensor.
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/motion/{sensor_id}/arm"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get("detail", "Failed to arm motion sensor")
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def disarm_motion_sensor(self, sensor_id: int) -> dict:
+        """Disarm a motion sensor.
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/motion/{sensor_id}/disarm"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to disarm motion sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def trigger_motion_sensor(self, sensor_id: int) -> dict:
+        """Trigger a motion sensor (simulate motion detection).
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/motion/{sensor_id}/trigger"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to trigger motion sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def release_motion_sensor(self, sensor_id: int) -> dict:
+        """Release a motion sensor (clear motion detection).
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/motion/{sensor_id}/release"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to release motion sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def arm_windoor_sensor(self, sensor_id: int) -> dict:
+        """Arm a window/door sensor.
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/windoor/{sensor_id}/arm"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get("detail", "Failed to arm windoor sensor")
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def disarm_windoor_sensor(self, sensor_id: int) -> dict:
+        """Disarm a window/door sensor.
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/windoor/{sensor_id}/disarm"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to disarm windoor sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def open_windoor_sensor(self, sensor_id: int) -> dict:
+        """Open a window/door sensor (simulate opening).
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/windoor/{sensor_id}/open"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to open windoor sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def close_windoor_sensor(self, sensor_id: int) -> dict:
+        """Close a window/door sensor (simulate closing).
+
+        Args:
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor state response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/windoor/{sensor_id}/close"
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get(
+                "detail", "Failed to close windoor sensor"
+            )
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")
+
+    def get_sensor_status(self, sensor_type: str, sensor_id: int) -> dict:
+        """Get detailed sensor status.
+
+        Args:
+            sensor_type: Sensor type ("motion" or "windoor")
+            sensor_id: Sensor identifier
+
+        Returns:
+            Sensor status response
+
+        Raises:
+            requests.HTTPException: If request fails
+        """
+        url = f"{self.base_url}/surveillance/sensors/{sensor_type}/{sensor_id}/status"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_detail = response.json().get("detail", "Failed to get sensor status")
+            raise requests.HTTPError(f"{response.status_code}: {error_detail}")

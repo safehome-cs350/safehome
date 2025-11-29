@@ -9,6 +9,7 @@ from tkinter import messagebox, simpledialog, ttk
 from PIL import Image, ImageTk
 
 from .api_client import APIClient
+from .sensor_panel import SensorPanel
 
 
 class SurveillancePanel(ttk.Frame):
@@ -120,6 +121,14 @@ class SurveillancePanel(ttk.Frame):
             width=18,
         )
         thumbnail_btn.pack(pady=2)
+
+        sensor_btn = ttk.Button(
+            control_frame,
+            text="Sensor Management",
+            command=self.open_sensor_panel,
+            width=18,
+        )
+        sensor_btn.pack(pady=5)
 
         right_frame = ttk.LabelFrame(self, text="Camera View", padding=10)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -818,6 +827,12 @@ class SurveillancePanel(ttk.Frame):
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def open_sensor_panel(self):
+        """Open the sensor management window."""
+        sensor_window = SensorPanel(self)
+        sensor_window.transient(self)
+        sensor_window.grab_set()
 
     def view_camera_from_thumbnail(self, cam_id, window):
         """View camera from thumbnail selection."""
