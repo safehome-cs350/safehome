@@ -830,7 +830,17 @@ class SurveillancePanel(ttk.Frame):
 
     def open_sensor_panel(self):
         """Open the sensor management window."""
-        sensor_window = SensorPanel(self)
+        user_id = self.app.current_user if hasattr(self.app, "current_user") else None
+
+        # Get security panel from dashboard to refresh its log
+        def refresh_security_log():
+            if hasattr(self.app, "dashboard") and self.app.dashboard:
+                if hasattr(self.app.dashboard, "security_panel"):
+                    self.app.dashboard.security_panel.load_intrusion_log()
+
+        sensor_window = SensorPanel(
+            self, user_id=user_id, log_refresh_callback=refresh_security_log
+        )
         sensor_window.transient(self)
         sensor_window.grab_set()
 

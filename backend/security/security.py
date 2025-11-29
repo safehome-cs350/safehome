@@ -187,6 +187,14 @@ def arm_safety_zone(request: SafetyZoneRequest):
     # Arm the safety zone
     zone_to_arm.is_armed = True
 
+    # Log the zone arming event
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=None,
+        location=request.name,
+        description=f"Safety zone '{request.name}' armed",
+    )
+
     return {"message": "Safety zone armed successfully"}
 
 
@@ -234,6 +242,14 @@ def disarm_safety_zone(request: SafetyZoneRequest):
 
     # Disarm the safety zone
     zone_to_disarm.is_armed = False
+
+    # Log the zone disarming event
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=None,
+        location=request.name,
+        description=f"Safety zone '{request.name}' disarmed",
+    )
 
     return {"message": "Safety zone disarmed successfully"}
 

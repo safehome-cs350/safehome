@@ -607,6 +607,8 @@ class SecurityPanel(ttk.Frame):
                 messagebox.showinfo("Success", f"Zone '{zone_name}' {action.lower()}")
                 # Reload zones from GET API after toggle
                 self.load_safety_zones()
+                # Refresh intrusion log after zone action
+                self.load_intrusion_log()
                 self.app.update_status(f"Zone '{zone_name}' {action.lower()}")
             except Exception as e:
                 error_message = str(e)
