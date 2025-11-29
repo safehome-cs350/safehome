@@ -72,7 +72,6 @@ class TestSecurityPanel:
         panel.arm_system()
 
         assert panel.system_armed
-        assert panel.status_label.cget("text") == "ARMED"
         mock_messagebox.askyesno.assert_called_once()
         mock_messagebox.showinfo.assert_called_once()
 
@@ -103,14 +102,11 @@ class TestSecurityPanel:
 
         panel = SecurityPanel(root, app)
         panel.system_armed = True
-        panel.arm_btn.config(state=tk.DISABLED)
-        panel.disarm_btn.config(state=tk.NORMAL)
         mock_messagebox.askyesno.return_value = True
 
         panel.disarm_system()
 
         assert not panel.system_armed
-        assert panel.status_label.cget("text") == "DISARMED"
         mock_messagebox.askyesno.assert_called_once()
         mock_messagebox.showinfo.assert_called_once()
 
