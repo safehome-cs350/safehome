@@ -1,6 +1,5 @@
 """Tests for the surveillance API module."""
 
-import base64
 import sys
 from pathlib import Path
 
@@ -55,10 +54,8 @@ class TestCameraView:
         assert data["name"] == "거실 카메라"
         assert data["is_enabled"]
         assert data["is_online"]
-        assert "current_view_base64" in data
-        assert data["current_view_base64"] is not None
-
-        base64.b64decode(data["current_view_base64"])
+        assert "image_url" in data
+        assert data["image_url"] is not None
 
     def test_get_camera_view_disabled(self):
         """Test getting view from disabled camera."""
@@ -701,7 +698,7 @@ class TestErrorHandling:
             assert response.status_code == 200
             data = response.json()
             # This should trigger line 354:
-            # messages.append(f"Zoom limit reached at {current_zoom}")
+            # messages.append(f"Zoom limit reached at current_zoom")
             # (Zoom limit reached at current_zoom)
             assert "Zoom limit reached" in data["message"]
 

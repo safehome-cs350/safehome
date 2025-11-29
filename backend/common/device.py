@@ -107,7 +107,7 @@ class CameraDB:
             is_enabled=True,
             has_password=False,
             password=None,
-            url="/camera1.jpg",
+            url="/static/camera1.jpg",
         ),
         2: CameraInfo(
             camera_id=2,
@@ -116,7 +116,7 @@ class CameraDB:
             is_enabled=True,
             has_password=True,
             password="camera123",
-            url="/camera2.jpg",
+            url="/static/camera2.jpg",
         ),
         3: CameraInfo(
             camera_id=3,
@@ -125,7 +125,7 @@ class CameraDB:
             is_enabled=False,
             has_password=False,
             password=None,
-            url="/camera3.jpg",
+            url="/static/camera3.jpg",
         ),
     }
 

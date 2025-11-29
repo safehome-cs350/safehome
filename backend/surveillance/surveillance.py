@@ -29,7 +29,7 @@ class CameraViewResponse(BaseModel):
     is_enabled: bool
     is_online: bool
     stream_url: str
-    current_view_base64: Optional[str] = None
+    image_url: str
     pan_position: int = 0
     zoom_level: int = 2
     current_time: int = 0
@@ -236,10 +236,7 @@ async def list_cameras():
                         "is_enabled": True,
                         "is_online": True,
                         "stream_url": "https://example.com/stream/cam1.m3u8",
-                        "current_view_base64": (
-                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
-                            "AAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-                        ),
+                        "image_url": "/camera1.jpg",
                         "pan_position": 0,
                         "zoom_level": 2,
                         "current_time": 0,
@@ -297,15 +294,13 @@ async def display_camera_view(camera_id: int, password: str | None = None):
 
     try:
         device_camera = get_or_create_camera(camera_id)
-        view_base64 = load_camera_png_as_base64()
-
         return CameraViewResponse(
             camera_id=camera_id,
             name=camera.name,
             is_enabled=camera.is_enabled,
             is_online=camera.is_online,
             stream_url=f"https://example.com/stream/cam{camera_id}.m3u8",
-            current_view_base64=view_base64,
+            image_url=camera.url,
             pan_position=device_camera.pan,
             zoom_level=device_camera.zoom,
             current_time=device_camera.time,
