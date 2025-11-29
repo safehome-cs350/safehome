@@ -95,18 +95,12 @@ class CommonAPIClient:
         """
         url = f"{self.base_url}/config/"
         payload = {"user_id": user_id}
-        if password1 is not None:
-            payload["password1"] = password1
-        if password2 is not None:
-            payload["password2"] = password2
-        if master_password is not None:
-            payload["master_password"] = master_password
-        if guest_password is not None:
-            payload["guest_password"] = guest_password
-        if delay_time is not None:
-            payload["delay_time"] = delay_time
-        if phone_number is not None:
-            payload["phone_number"] = phone_number
+        payload["password1"] = password1
+        payload["password2"] = password2
+        payload["master_password"] = master_password
+        payload["guest_password"] = guest_password
+        payload["delay_time"] = delay_time
+        payload["phone_number"] = phone_number
 
         response = requests.post(url, json=payload)
         if response.status_code == 200:
