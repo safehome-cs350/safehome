@@ -18,6 +18,21 @@ def tk_root():
 
 def test_uc_3a(tk_root):
     """Test for UC3.a. Display Specific camera view."""
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[0]
+    panel.camera_tree.selection_set(item)
+
+    with patch("tkinter.Canvas.create_image") as mock_create_image:
+        panel.on_camera_select(None)
+
+    mock_create_image.assert_called_once()
+
+
+def test_uc_3b(tk_root):
+    """Test for UC3.b. Pan/Zoom specific camera view."""
     pass
 
 
@@ -49,6 +64,7 @@ def test_uc_3d(tk_root):
     panel.camera_tree.selection_set(item)
 
     with (
+        patch("tkinter.simpledialog.askstring", return_value="camera123"),
         patch("tkinter.messagebox.askyesno", return_value=True),
         patch("tkinter.messagebox.showinfo") as mock_showinfo,
     ):
