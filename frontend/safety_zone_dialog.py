@@ -60,7 +60,28 @@ class SafetyZoneDialog(tk.Toplevel):
         for device in self.available_devices:
             device_id = device.get("id", "")
             device_type = device.get("type", "")
-            display_text = f"Device {device_id} ({device_type})"
+            location = device.get("location", "")
+
+            # Build display text with location and sensor/camera details
+            if device_type == "sensor":
+                sensor_type = device.get("sensor_type", "")
+                if location:
+                    display_text = (
+                        f"Device {device_id} ({sensor_type} sensor) - {location}"
+                    )
+                else:
+                    display_text = f"Device {device_id} ({sensor_type} sensor)"
+            elif device_type == "camera":
+                name = device.get("name", "")
+                if location:
+                    display_text = f"Device {device_id} ({name}) - {location}"
+                else:
+                    display_text = f"Device {device_id} ({name})"
+            else:
+                if location:
+                    display_text = f"Device {device_id} ({device_type}) - {location}"
+                else:
+                    display_text = f"Device {device_id} ({device_type})"
             self.device_listbox.insert(tk.END, display_text)
 
         # Store device IDs for each listbox item

@@ -50,6 +50,8 @@ class Device:
 
     type: DeviceType
     id: int
+    sensor_info: "SensorInfo | None" = None  # Sensor data from SensorDB
+    camera_info: "CameraInfo | None" = None  # Camera data from CameraDB
 
 
 @dataclass

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-from ..common.device import AlarmType, SafetyZone
+from ..common.device import AlarmType, Device, SafetyZone
 from ..common.user import UserDB
 from .request import (
     AlarmEventRequest,
@@ -15,6 +15,37 @@ from .request import (
 )
 
 router = APIRouter()
+
+
+def _serialize_device(device: Device) -> dict:
+    """Serialize device data including sensor_info and camera_info.
+
+    Args:
+        device: Device object to serialize
+
+    Returns:
+        Dictionary with device data, including sensor/camera info if available
+    """
+    device_data = {"id": device.id, "type": device.type.value}
+
+    # Include sensor information if available
+    if device.sensor_info:
+        device_data["sensor_type"] = device.sensor_info.sensor_type
+        device_data["location"] = device.sensor_info.location
+        device_data["is_armed"] = device.sensor_info.is_armed
+        device_data["is_triggered"] = device.sensor_info.is_triggered
+        if device.sensor_info.sensor_type in ["windoor", "door"]:
+            device_data["is_opened"] = device.sensor_info.is_opened
+
+    # Include camera information if available
+    if device.camera_info:
+        device_data["name"] = device.camera_info.name
+        device_data["location"] = device.camera_info.location
+        device_data["is_enabled"] = device.camera_info.is_enabled
+        device_data["is_online"] = device.camera_info.is_online
+        device_data["has_password"] = device.camera_info.has_password
+
+    return device_data
 
 
 @router.post(
@@ -39,9 +70,25 @@ def reconfirm(request: ReconfirmRequest):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user ID")
 
-    if not (
-        request.address == user.address or request.phone_number == user.phone_number
-    ):
+    # Verify that at least one field is provided
+    if not request.address and not request.phone_number:
+        raise HTTPException(
+            status_code=401, detail="Please provide address or phone number"
+        )
+
+    # Verify that at least one field matches (address OR phone number)
+    address_match = (
+        request.address is not None
+        and request.address.strip() != ""
+        and request.address == user.address
+    )
+    phone_match = (
+        request.phone_number is not None
+        and request.phone_number.strip() != ""
+        and request.phone_number == user.phone_number
+    )
+
+    if not (address_match or phone_match):
         raise HTTPException(status_code=401, detail="Information mismatch")
 
     return {"message": "Reconfirmed successfully"}
@@ -75,10 +122,7 @@ def get_safety_zones(user_id: str):
         safety_zones_data.append(
             {
                 "name": zone.name,
-                "devices": [
-                    {"id": device.id, "type": device.type.value}
-                    for device in zone.devices
-                ],
+                "devices": [_serialize_device(device) for device in zone.devices],
                 "is_armed": zone.is_armed,
             }
         )
@@ -760,7 +804,7 @@ def configure_safety_zone_interface(user_id: str):
 
     available_devices = []
     for device in user.devices:
-        available_devices.append({"id": device.id, "type": device.type.value})
+        available_devices.append(_serialize_device(device))
 
     return {
         "message": "Safety zone configuration interface",

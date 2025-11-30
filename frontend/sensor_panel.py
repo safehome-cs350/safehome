@@ -151,21 +151,79 @@ class SensorPanel(tk.Toplevel):
         status_frame = ttk.LabelFrame(self, text="Sensor Status", padding=10)
         status_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+        # Window/Door Sensors section
+        windoor_header = ttk.Frame(status_frame)
+        windoor_header.pack(fill=tk.X, pady=(0, 5))
         ttk.Label(
-            status_frame, text="Window/Door Sensors:", font=("Arial", 10, "bold")
-        ).pack(anchor=tk.W, pady=(0, 5))
-        self.windoor_status_text = tk.Text(
-            status_frame, height=4, width=80, wrap=tk.WORD, bg="#2b2b2b", fg="#ffffff"
-        )
-        self.windoor_status_text.pack(fill=tk.X, pady=2)
+            windoor_header, text="Window/Door Sensors:", font=("Arial", 10, "bold")
+        ).pack(side=tk.LEFT)
 
-        ttk.Label(
-            status_frame, text="Motion Detectors:", font=("Arial", 10, "bold")
-        ).pack(anchor=tk.W, pady=(10, 5))
-        self.motion_status_text = tk.Text(
-            status_frame, height=4, width=80, wrap=tk.WORD, bg="#2b2b2b", fg="#ffffff"
+        windoor_list_frame = ttk.Frame(status_frame)
+        windoor_list_frame.pack(fill=tk.BOTH, expand=True, pady=2)
+
+        windoor_columns = ("sensor_id", "location", "armed", "status")
+        self.windoor_tree = ttk.Treeview(
+            windoor_list_frame,
+            columns=windoor_columns,
+            show="headings",
+            height=4,
         )
-        self.motion_status_text.pack(fill=tk.X, pady=2)
+        self.windoor_tree.heading("sensor_id", text="ID")
+        self.windoor_tree.heading("location", text="Location")
+        self.windoor_tree.heading("armed", text="Armed")
+        self.windoor_tree.heading("status", text="Status")
+
+        self.windoor_tree.column("sensor_id", width=50)
+        self.windoor_tree.column("location", width=150)
+        self.windoor_tree.column("armed", width=80)
+        self.windoor_tree.column("status", width=100)
+
+        windoor_scrollbar = ttk.Scrollbar(
+            windoor_list_frame,
+            orient=tk.VERTICAL,
+            command=self.windoor_tree.yview,
+        )
+        self.windoor_tree.configure(yscrollcommand=windoor_scrollbar.set)
+
+        self.windoor_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        windoor_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Motion Detectors section
+        motion_header = ttk.Frame(status_frame)
+        motion_header.pack(fill=tk.X, pady=(10, 5))
+        ttk.Label(
+            motion_header, text="Motion Detectors:", font=("Arial", 10, "bold")
+        ).pack(side=tk.LEFT)
+
+        motion_list_frame = ttk.Frame(status_frame)
+        motion_list_frame.pack(fill=tk.BOTH, expand=True, pady=2)
+
+        motion_columns = ("sensor_id", "location", "armed", "status")
+        self.motion_tree = ttk.Treeview(
+            motion_list_frame,
+            columns=motion_columns,
+            show="headings",
+            height=4,
+        )
+        self.motion_tree.heading("sensor_id", text="ID")
+        self.motion_tree.heading("location", text="Location")
+        self.motion_tree.heading("armed", text="Armed")
+        self.motion_tree.heading("status", text="Status")
+
+        self.motion_tree.column("sensor_id", width=50)
+        self.motion_tree.column("location", width=150)
+        self.motion_tree.column("armed", width=80)
+        self.motion_tree.column("status", width=100)
+
+        motion_scrollbar = ttk.Scrollbar(
+            motion_list_frame,
+            orient=tk.VERTICAL,
+            command=self.motion_tree.yview,
+        )
+        self.motion_tree.configure(yscrollcommand=motion_scrollbar.set)
+
+        self.motion_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        motion_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def load_sensors(self):
         """Load sensors from API and update UI."""
@@ -215,11 +273,13 @@ class SensorPanel(tk.Toplevel):
 
     def refresh_status(self):
         """Refresh sensor status display."""
-        self.windoor_status_text.config(state=tk.NORMAL)
-        self.motion_status_text.config(state=tk.NORMAL)
-        self.windoor_status_text.delete(1.0, tk.END)
-        self.motion_status_text.delete(1.0, tk.END)
+        # Clear existing items
+        for item in self.windoor_tree.get_children():
+            self.windoor_tree.delete(item)
+        for item in self.motion_tree.get_children():
+            self.motion_tree.delete(item)
 
+        # Update windoor sensors
         windoor_sensors = [
             (sid, self.sensors.get(("windoor", sid)))
             for sid in sorted(self.windoor_sensor_ids)
@@ -227,18 +287,20 @@ class SensorPanel(tk.Toplevel):
         for sensor_id, sensor in windoor_sensors:
             if sensor:
                 is_armed = sensor.get("is_armed", False)
+                # For windoor sensors, is_triggered represents is_opened
                 is_opened = sensor.get("is_triggered", False)
-                sensor_status = "ON" if is_armed else "OFF"
+                location = sensor.get("location", "Unknown")
+
+                armed_status = "Armed" if is_armed else "Disarmed"
                 door_status = "OPEN" if is_opened else "CLOSED"
 
-                armed_indicator = "●" if is_armed else "○"
-                opened_indicator = "●" if is_opened else "○"
-                status_line = (
-                    f"ID {sensor_id}: Sensor[{armed_indicator} {sensor_status}] "
-                    f"Door[{opened_indicator} {door_status}]\n"
+                self.windoor_tree.insert(
+                    "",
+                    tk.END,
+                    values=(sensor_id, location, armed_status, door_status),
                 )
-                self.windoor_status_text.insert(tk.END, status_line)
 
+        # Update motion sensors
         motion_sensors = [
             (sid, self.sensors.get(("motion", sid)))
             for sid in sorted(self.motion_sensor_ids)
@@ -247,19 +309,19 @@ class SensorPanel(tk.Toplevel):
             if sensor:
                 is_armed = sensor.get("is_armed", False)
                 is_triggered = sensor.get("is_triggered", False)
-                sensor_status = "ON" if is_armed else "OFF"
+                location = sensor.get("location", "Unknown")
+
+                armed_status = "Armed" if is_armed else "Disarmed"
                 motion_status = "DETECTED" if is_triggered else "CLEAR"
 
-                armed_indicator = "●" if is_armed else "○"
-                triggered_indicator = "●" if is_triggered else "○"
-                status_line = (
-                    f"ID {sensor_id}: Sensor[{armed_indicator} {sensor_status}] "
-                    f"Motion[{triggered_indicator} {motion_status}]\n"
+                self.motion_tree.insert(
+                    "",
+                    tk.END,
+                    values=(sensor_id, location, armed_status, motion_status),
                 )
-                self.motion_status_text.insert(tk.END, status_line)
 
-        self.windoor_status_text.config(state=tk.DISABLED)
-        self.motion_status_text.config(state=tk.DISABLED)
+        # Force UI update to ensure status is displayed
+        self.update_idletasks()
 
     def get_windoor_id(self):
         """Get windoor sensor ID from input."""
@@ -299,6 +361,19 @@ class SensorPanel(tk.Toplevel):
         if sensor_id is None:
             return
 
+        # Check if the sensor is currently open before arming
+        try:
+            sensor_status = self.api_client.get_sensor_status("windoor", sensor_id)
+            is_opened = sensor_status.get("is_opened", False)
+
+            if is_opened:
+                messagebox.showerror("Error", "doors and windows not closed")
+                return
+        except Exception:
+            # If we can't get sensor status, continue with arming attempt
+            # The API will handle the validation
+            pass
+
         try:
             self.api_client.arm_windoor_sensor(sensor_id)
             messagebox.showinfo("Success", f"Windoor sensor {sensor_id} armed")
@@ -313,6 +388,8 @@ class SensorPanel(tk.Toplevel):
             error_message = str(e)
             if "404" in error_message:
                 messagebox.showerror("Error", "Sensor not found")
+            elif "doors and windows not closed" in error_message.lower():
+                messagebox.showerror("Error", "doors and windows not closed")
             else:
                 messagebox.showerror("Error", f"Failed to arm sensor: {error_message}")
 

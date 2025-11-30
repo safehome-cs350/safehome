@@ -95,18 +95,37 @@ class TestSensorPanel:
         with patch.object(SensorPanel, "load_sensors"):
             panel = SensorPanel(root)
             panel.sensors = {
-                ("windoor", 1): {"is_armed": True, "is_triggered": False},
-                ("motion", 1): {"is_armed": False, "is_triggered": True},
+                ("windoor", 1): {
+                    "is_armed": True,
+                    "is_triggered": False,
+                    "location": "Test Location",
+                },
+                ("motion", 1): {
+                    "is_armed": False,
+                    "is_triggered": True,
+                    "location": "Test Location",
+                },
             }
             panel.windoor_sensor_ids = [1]
             panel.motion_sensor_ids = [1]
 
             panel.refresh_status()
 
-            windoor_text = panel.windoor_status_text.get(1.0, tk.END)
-            motion_text = panel.motion_status_text.get(1.0, tk.END)
-            assert "ID 1" in windoor_text
-            assert "ID 1" in motion_text
+            # Check windoor tree has items
+            windoor_items = panel.windoor_tree.get_children()
+            assert len(windoor_items) == 1
+            windoor_values = panel.windoor_tree.item(windoor_items[0], "values")
+            assert windoor_values[0] == "1"  # sensor_id
+            assert windoor_values[2] == "Armed"  # armed status
+            assert windoor_values[3] == "CLOSED"  # door status
+
+            # Check motion tree has items
+            motion_items = panel.motion_tree.get_children()
+            assert len(motion_items) == 1
+            motion_values = panel.motion_tree.item(motion_items[0], "values")
+            assert motion_values[0] == "1"  # sensor_id
+            assert motion_values[2] == "Disarmed"  # armed status
+            assert motion_values[3] == "DETECTED"  # motion status
 
         root.destroy()
 
