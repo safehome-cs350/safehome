@@ -397,9 +397,12 @@ class TestSurveillancePanel:
 
         root.destroy()
 
+    @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_delete_camera_password(self, mock_api_client_class, mock_messagebox):
+    def test_delete_camera_password(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test deleting camera password."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -425,6 +428,7 @@ class TestSurveillancePanel:
 
         panel = SurveillancePanel(root, app)
         panel.cameras[3]["has_password"] = True
+        mock_simpledialog.askstring.return_value = "test123"
         mock_messagebox.askyesno.return_value = True
 
         for item in panel.camera_tree.get_children():
@@ -434,7 +438,7 @@ class TestSurveillancePanel:
 
         panel.delete_camera_password()
 
-        mock_api_client.delete_camera_password.assert_called_once_with(3)
+        mock_api_client.delete_camera_password.assert_called_once_with(3, "test123")
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()

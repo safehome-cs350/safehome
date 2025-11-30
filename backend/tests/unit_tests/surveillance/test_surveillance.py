@@ -207,12 +207,38 @@ class TestCameraPassword:
 
     def test_delete_camera_password(self):
         """Test deleting camera password."""
-        response = client.delete("/surveillance/cameras/1/password")
+        # First set a password
+        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+
+        # Delete password with correct password
+        response = client.delete(
+            "/surveillance/cameras/1/password", params={"password": "test123"}
+        )
         assert response.status_code == 200
 
         data = response.json()
         assert data["camera_id"] == 1
         assert not data["has_password"]
+
+    def test_delete_camera_password_without_password(self):
+        """Test deleting camera password without providing password."""
+        # First set a password
+        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+
+        # Try to delete without password - should fail
+        response = client.delete("/surveillance/cameras/1/password")
+        assert response.status_code == 401
+
+    def test_delete_camera_password_incorrect_password(self):
+        """Test deleting camera password with incorrect password."""
+        # First set a password
+        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+
+        # Try to delete with wrong password - should fail
+        response = client.delete(
+            "/surveillance/cameras/1/password", params={"password": "wrong"}
+        )
+        assert response.status_code == 401
 
 
 class TestCameraState:
