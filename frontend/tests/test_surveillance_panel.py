@@ -361,7 +361,53 @@ class TestSurveillancePanel:
     def test_set_camera_password(
         self, mock_api_client_class, mock_messagebox, mock_simpledialog
     ):
-        """Test setting camera password."""
+        """Test setting camera password for camera without existing password."""
+        mock_api_client = Mock()
+        mock_api_client.list_cameras.return_value = {
+            "cameras": [
+                {
+                    "camera_id": 1,
+                    "name": "Camera 1",
+                    "location": "Living Room",
+                    "is_enabled": True,
+                    "is_online": True,
+                    "has_password": False,
+                },
+            ]
+        }
+        mock_api_client.set_camera_password.return_value = {"message": "Password set"}
+        mock_api_client_class.return_value = mock_api_client
+
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+
+        panel = SurveillancePanel(root, app)
+        # Mock password prompts: new password, then confirm password
+        mock_simpledialog.askstring.side_effect = ["newpass123", "newpass123"]
+
+        for item in panel.camera_tree.get_children():
+            if int(panel.camera_tree.item(item)["tags"][0]) == 1:
+                panel.camera_tree.selection_set(item)
+                break
+
+        panel.set_camera_password()
+
+        # Should be called with new_password and None for old_password
+        mock_api_client.set_camera_password.assert_called_once_with(
+            1, "newpass123", None
+        )
+        mock_messagebox.showinfo.assert_called_once()
+
+        root.destroy()
+
+    @patch("frontend.surveillance_panel.simpledialog")
+    @patch("frontend.surveillance_panel.messagebox")
+    @patch("frontend.surveillance_panel.APIClient")
+    def test_change_camera_password(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
+        """Test changing camera password for camera with existing password."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
             "cameras": [
@@ -383,7 +429,13 @@ class TestSurveillancePanel:
         app = Mock()
 
         panel = SurveillancePanel(root, app)
-        mock_simpledialog.askstring.return_value = "newpass123"
+        panel.cameras[1]["has_password"] = True
+        # Mock password prompts: old password, new password, confirm password
+        mock_simpledialog.askstring.side_effect = [
+            "oldpass123",
+            "newpass123",
+            "newpass123",
+        ]
 
         for item in panel.camera_tree.get_children():
             if int(panel.camera_tree.item(item)["tags"][0]) == 1:
@@ -392,14 +444,20 @@ class TestSurveillancePanel:
 
         panel.set_camera_password()
 
-        mock_api_client.set_camera_password.assert_called_once_with(1, "newpass123")
+        # Should be called with new_password and old_password
+        mock_api_client.set_camera_password.assert_called_once_with(
+            1, "newpass123", "oldpass123"
+        )
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
 
+    @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_delete_camera_password(self, mock_api_client_class, mock_messagebox):
+    def test_delete_camera_password(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test deleting camera password."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -425,6 +483,7 @@ class TestSurveillancePanel:
 
         panel = SurveillancePanel(root, app)
         panel.cameras[3]["has_password"] = True
+        mock_simpledialog.askstring.return_value = "test123"
         mock_messagebox.askyesno.return_value = True
 
         for item in panel.camera_tree.get_children():
@@ -434,7 +493,7 @@ class TestSurveillancePanel:
 
         panel.delete_camera_password()
 
-        mock_api_client.delete_camera_password.assert_called_once_with(3)
+        mock_api_client.delete_camera_password.assert_called_once_with(3, "test123")
         mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
