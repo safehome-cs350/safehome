@@ -33,7 +33,25 @@ def test_uc_3a(tk_root):
 
 def test_uc_3b(tk_root):
     """Test for UC3.b. Pan/Zoom specific camera view."""
-    pass
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    item = panel.camera_tree.get_children()[0]
+    panel.camera_tree.selection_set(item)
+    panel.on_camera_select(None)
+
+    # Pan
+    with patch.object(panel, "load_camera_view") as mock_load:
+        panel.adjust_pan(1)
+
+    mock_load.assert_called_once()
+
+    # Zoom
+    with patch.object(panel, "load_camera_view") as mock_load:
+        panel.adjust_zoom(1)
+
+    mock_load.assert_called_once()
 
 
 def test_uc_3c(tk_root):
@@ -75,7 +93,12 @@ def test_uc_3d(tk_root):
 
 def test_uc_3e(tk_root):
     """Test for UC3.e. View thumbnail Shots."""
-    pass
+    mock_app = Mock()
+    mock_app.current_user = "homeowner1"
+    panel = SurveillancePanel(tk_root, mock_app)
+
+    panel.show_thumbnails()
+    assert panel.thumbnails_loaded == 1
 
 
 def test_uc_3f(tk_root):

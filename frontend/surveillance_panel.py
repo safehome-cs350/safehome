@@ -26,6 +26,7 @@ class SurveillancePanel(ttk.Frame):
         self.current_pan = 0
         self.current_zoom = 2
         self.camera_passwords = {}
+        self.thumbnails_loaded = 0
 
         self.setup_ui()
         self.load_cameras()
@@ -928,7 +929,7 @@ class SurveillancePanel(ttk.Frame):
 
         row = 0
         col = 0
-        thumbnails_loaded = 0
+        self.thumbnails_loaded = 0
 
         for cam_id, camera in eligible_cameras:
             try:
@@ -993,7 +994,7 @@ class SurveillancePanel(ttk.Frame):
                 else:
                     ttk.Label(thumb_frame, text="No thumbnail available").pack()
 
-                thumbnails_loaded += 1
+                self.thumbnails_loaded += 1
                 col += 1
                 if col >= 3:
                     col = 0
@@ -1012,7 +1013,7 @@ class SurveillancePanel(ttk.Frame):
                 # Continue with other cameras if one fails
                 continue
 
-        if thumbnails_loaded == 0:
+        if self.thumbnails_loaded == 0:
             ttk.Label(
                 scrollable_frame,
                 text="No thumbnails available for eligible cameras",
