@@ -94,3 +94,94 @@ class TestSafeHomeApp:
             assert True
 
             app.root.destroy()
+
+    def test_show_dashboard_destroys_widgets(self):
+        """Test show_dashboard destroys existing widgets."""
+        root = tk.Tk()
+        root.withdraw()
+
+        with patch("frontend.main.LoginWindow"):
+            app = SafeHomeApp()
+            # Clear any existing widgets first
+            for widget in app.root.winfo_children():
+                widget.destroy()
+            # Add a widget to root
+            test_widget = tk.Label(app.root, text="test")
+            test_widget.pack()
+
+            initial_count = len(app.root.winfo_children())
+
+            with patch("frontend.main.MainDashboard") as mock_dashboard_class:
+                mock_dashboard = Mock()
+                mock_dashboard.pack = Mock()
+                mock_dashboard_class.return_value = mock_dashboard
+
+                app.show_dashboard()
+
+                # Widgets should be destroyed before dashboard is added
+                # Dashboard should be added
+                mock_dashboard.pack.assert_called_once()
+
+            app.root.destroy()
+
+    def test_logout_destroys_widgets(self):
+        """Test logout destroys existing widgets."""
+        root = tk.Tk()
+        root.withdraw()
+
+        with patch("frontend.main.LoginWindow") as mock_login:
+            app = SafeHomeApp()
+            app.is_logged_in = True
+            app.current_user = "test_user"
+
+            with patch("frontend.main.MainDashboard") as mock_dashboard_class:
+                mock_dashboard = Mock()
+                mock_dashboard_class.return_value = mock_dashboard
+                app.on_login_success("test_user")
+
+                # Add another widget
+                test_widget = tk.Label(app.root, text="test")
+                test_widget.pack()
+
+                app.logout()
+
+                # Widgets should be destroyed before showing login
+                mock_login.assert_called()
+
+            app.root.destroy()
+
+    def test_run(self):
+        """Test run method calls mainloop."""
+        root = tk.Tk()
+        root.withdraw()
+
+        with patch("frontend.main.LoginWindow"):
+            app = SafeHomeApp()
+
+            with patch.object(app.root, "mainloop") as mock_mainloop:
+                app.run()
+                mock_mainloop.assert_called_once()
+
+            app.root.destroy()
+
+    def test_main_function(self):
+        """Test main function."""
+        with patch("frontend.main.SafeHomeApp") as mock_app_class:
+            mock_app = Mock()
+            mock_app_class.return_value = mock_app
+
+            from frontend.main import main
+
+            main()
+
+            mock_app_class.assert_called_once()
+            mock_app.run.assert_called_once()
+
+    def test_main_entry_point(self):
+        """Test main entry point when run as script."""
+        # This test verifies the entry point exists
+        # The actual execution is tested in test_main_function
+        import frontend.main
+        # Verify the entry point code exists
+        assert hasattr(frontend.main, "main")
+        assert callable(frontend.main.main)

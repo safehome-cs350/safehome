@@ -139,3 +139,255 @@ class TestConfigurationPanel:
             app.update_status.assert_not_called()
 
         root.destroy()
+
+    def test_turn_system_on_no_user(self):
+        """Test turning system on without logged in user."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = None
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            panel.turn_system_on()
+
+            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+
+        root.destroy()
+
+    def test_turn_system_on_connection_error(self):
+        """Test turning system on with connection error."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            mock_messagebox.askyesno.return_value = True
+            with patch.object(panel.api_client, "power_on") as mock_power_on:
+                mock_power_on.side_effect = Exception("Connection refused")
+                panel.turn_system_on()
+
+                mock_messagebox.showerror.assert_called()
+                call_args = mock_messagebox.showerror.call_args[0]
+                assert "Cannot connect to backend server" in call_args[1]
+
+        root.destroy()
+
+    def test_turn_system_off_no_user(self):
+        """Test turning system off without logged in user."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = None
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            panel.turn_system_off()
+
+            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+
+        root.destroy()
+
+    def test_turn_system_off_connection_error(self):
+        """Test turning system off with connection error."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            mock_messagebox.askyesno.return_value = True
+            with patch.object(panel.api_client, "power_off") as mock_power_off:
+                mock_power_off.side_effect = Exception("Connection refused")
+                panel.turn_system_off()
+
+                mock_messagebox.showerror.assert_called()
+                call_args = mock_messagebox.showerror.call_args[0]
+                assert "Cannot connect to backend server" in call_args[1]
+
+        root.destroy()
+
+    def test_reset_system_no_user(self):
+        """Test reset system without logged in user."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = None
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            panel.reset_system()
+
+            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+
+        root.destroy()
+
+    def test_reset_system_connection_error(self):
+        """Test reset system with connection error."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            mock_messagebox.askyesno.return_value = True
+            with patch.object(panel.api_client, "config") as mock_config:
+                mock_config.side_effect = Exception("Connection refused")
+                panel.reset_system()
+
+                mock_messagebox.showerror.assert_called()
+                call_args = mock_messagebox.showerror.call_args[0]
+                assert "Cannot connect to backend server" in call_args[1]
+
+        root.destroy()
+
+    def test_save_settings_no_user(self):
+        """Test saving settings without logged in user."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = None
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            panel.save_settings()
+
+            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+
+        root.destroy()
+
+    def test_save_settings_delay_too_small(self):
+        """Test saving settings with delay time less than 300."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+        panel.delay_time_var.set("200")
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            panel.save_settings()
+
+            mock_messagebox.showerror.assert_called_once()
+            call_args = mock_messagebox.showerror.call_args[0]
+            assert "Delay time must be at least 300" in call_args[1]
+
+        root.destroy()
+
+    def test_save_settings_connection_error(self):
+        """Test saving settings with connection error."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+        panel.delay_time_var.set("600")
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            with patch.object(panel.api_client, "config") as mock_config:
+                mock_config.side_effect = Exception("Connection refused")
+                panel.save_settings()
+
+                mock_messagebox.showerror.assert_called()
+                call_args = mock_messagebox.showerror.call_args[0]
+                assert "Cannot connect to backend server" in call_args[1]
+
+        root.destroy()
+
+    def test_save_settings_400_error(self):
+        """Test saving settings with 400 error (delay time)."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+        panel.delay_time_var.set("600")
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            with patch.object(panel.api_client, "config") as mock_config:
+                mock_config.side_effect = Exception("400: Delay time must be at least 300")
+                panel.save_settings()
+
+                mock_messagebox.showerror.assert_called_once_with(
+                    "Error", "Delay time must be at least 300 seconds"
+                )
+
+        root.destroy()
+
+    def test_save_settings_generic_error(self):
+        """Test saving settings with generic error."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+        panel.delay_time_var.set("600")
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            with patch.object(panel.api_client, "config") as mock_config:
+                mock_config.side_effect = Exception("Some other error")
+                panel.save_settings()
+
+                mock_messagebox.showerror.assert_called()
+                call_args = mock_messagebox.showerror.call_args[0]
+                assert "Failed to save settings" in call_args[1]
+
+        root.destroy()
+
+    def test_save_settings_with_password_changes(self):
+        """Test saving settings with password changes."""
+        root = tk.Tk()
+        root.withdraw()
+        app = Mock()
+        app.current_user = "homeowner1"
+        app.update_status = Mock()
+
+        panel = ConfigurationPanel(root, app)
+        panel.delay_time_var.set("600")
+        panel.password1_var.set("newpass1")
+        panel.password2_var.set("newpass2")
+        panel.master_password_var.set("newmaster")
+        panel.guest_password_var.set("newguest")
+
+        with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
+            with patch.object(panel.api_client, "config") as mock_config:
+                mock_config.return_value = {"message": "Settings saved"}
+                with patch.object(panel, "load_config") as mock_load:
+                    panel.save_settings()
+
+                    # Verify config was called with password parameters
+                    call_kwargs = mock_config.call_args[1]
+                    assert call_kwargs["password1"] == "newpass1"
+                    assert call_kwargs["password2"] == "newpass2"
+                    assert call_kwargs["master_password"] == "newmaster"
+                    assert call_kwargs["guest_password"] == "newguest"
+                    mock_load.assert_called_once()
+                    mock_messagebox.showinfo.assert_called_once()
+
+        root.destroy()

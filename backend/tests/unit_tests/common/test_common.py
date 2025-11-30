@@ -230,3 +230,34 @@ def test_power_off_invalid_user():
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid user ID"
+
+
+def test_get_config_success():
+    """Test successful get config."""
+    from backend.common.common import get_config
+    from backend.common.request import GetConfigRequest
+
+    # Test the function directly to cover the missing lines
+    request = GetConfigRequest(user_id="homeowner1")
+    result = get_config(request)
+    assert "password1" in result
+    assert "password2" in result
+    assert "master_password" in result
+    assert "guest_password" in result
+    assert "delay_time" in result
+    assert "phone_number" in result
+
+
+def test_get_config_invalid_user():
+    """Test get config with invalid user ID."""
+    from fastapi import HTTPException
+
+    from backend.common.common import get_config
+    from backend.common.request import GetConfigRequest
+
+    # Test the function directly to cover the missing lines
+    request = GetConfigRequest(user_id="unknown")
+    with pytest.raises(HTTPException) as exc_info:
+        get_config(request)
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Invalid user ID"

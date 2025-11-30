@@ -95,3 +95,72 @@ class TestLoginWindow:
             callback.assert_called_once_with("admin")
 
         root.destroy()
+
+    @patch("frontend.login_window.messagebox")
+    def test_handle_login_connection_error(self, mock_messagebox):
+        """Test login with connection error."""
+        root = tk.Tk()
+        root.withdraw()
+        callback = Mock()
+        window = LoginWindow(root, callback)
+
+        window.username_entry.insert(0, "admin")
+        window.password_entry.insert(0, "admin123")
+        window.password2_entry.insert(0, "admin456")
+
+        with patch.object(window.api_client, "login") as mock_login:
+            mock_login.side_effect = Exception("Connection refused")
+            window.handle_login()
+
+            mock_messagebox.showerror.assert_called_once()
+            call_args = mock_messagebox.showerror.call_args[0]
+            assert "Cannot connect to backend server" in call_args[1]
+            callback.assert_not_called()
+
+        root.destroy()
+
+    @patch("frontend.login_window.messagebox")
+    def test_handle_login_connection_error_uppercase(self, mock_messagebox):
+        """Test login with connection error (uppercase)."""
+        root = tk.Tk()
+        root.withdraw()
+        callback = Mock()
+        window = LoginWindow(root, callback)
+
+        window.username_entry.insert(0, "admin")
+        window.password_entry.insert(0, "admin123")
+        window.password2_entry.insert(0, "admin456")
+
+        with patch.object(window.api_client, "login") as mock_login:
+            mock_login.side_effect = Exception("Connection Error")
+            window.handle_login()
+
+            mock_messagebox.showerror.assert_called_once()
+            call_args = mock_messagebox.showerror.call_args[0]
+            assert "Cannot connect to backend server" in call_args[1]
+            callback.assert_not_called()
+
+        root.destroy()
+
+    @patch("frontend.login_window.messagebox")
+    def test_handle_login_generic_error(self, mock_messagebox):
+        """Test login with generic error."""
+        root = tk.Tk()
+        root.withdraw()
+        callback = Mock()
+        window = LoginWindow(root, callback)
+
+        window.username_entry.insert(0, "admin")
+        window.password_entry.insert(0, "admin123")
+        window.password2_entry.insert(0, "admin456")
+
+        with patch.object(window.api_client, "login") as mock_login:
+            mock_login.side_effect = Exception("Some other error")
+            window.handle_login()
+
+            mock_messagebox.showerror.assert_called_once()
+            call_args = mock_messagebox.showerror.call_args[0]
+            assert "Login failed: Some other error" in call_args[1]
+            callback.assert_not_called()
+
+        root.destroy()
