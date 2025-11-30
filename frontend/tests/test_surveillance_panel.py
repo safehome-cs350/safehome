@@ -510,6 +510,10 @@ class TestSurveillancePanel:
 
         root = tk.Tk()
         root.withdraw()
+        app = Mock()
+
+        # Create panel instance to trigger load_cameras() in __init__
+        SurveillancePanel(root, app)
 
         mock_messagebox.showerror.assert_called()
         call_args = mock_messagebox.showerror.call_args[0]
