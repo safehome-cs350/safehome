@@ -69,6 +69,53 @@ class TestCameraView:
         assert response.status_code == 404
         assert response.json()["detail"] == "Camera not found"
 
+    def test_get_camera_view_password_required(self):
+        """Test getting view from camera that requires password but none provided."""
+        # Set password for camera 1
+        CameraDB.update_camera(1, has_password=True, password="correctpass")
+        CameraDB.update_camera(1, is_enabled=True)  # Enable camera
+
+        # Try to access without password
+        response = client.get("/surveillance/cameras/1/view")
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Password required to view this camera"
+
+        # Reset camera password
+        CameraDB.update_camera(1, has_password=False, password=None)
+
+    def test_get_camera_view_with_incorrect_password(self):
+        """Test getting view from camera with incorrect password."""
+        # Set password for camera 1
+        CameraDB.update_camera(1, has_password=True, password="correctpass")
+        CameraDB.update_camera(1, is_enabled=True)  # Enable camera
+
+        # Try to access with wrong password
+        response = client.get(
+            "/surveillance/cameras/1/view", params={"password": "wrongpass"}
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Incorrect password"
+
+        # Reset camera password
+        CameraDB.update_camera(1, has_password=False, password=None)
+
+    def test_get_camera_view_exception_handling(self):
+        """Test exception handling in camera view."""
+        import unittest.mock as mock
+
+        # Enable camera first
+        CameraDB.update_camera(1, is_enabled=True)
+
+        # Mock get_or_create_camera to raise an exception
+        with mock.patch(
+            "backend.surveillance.surveillance.get_or_create_camera"
+        ) as mock_camera:
+            mock_camera.side_effect = Exception("Camera device error")
+
+            response = client.get("/surveillance/cameras/1/view")
+            assert response.status_code == 500
+            assert "Failed to get camera view" in response.json()["detail"]
+
 
 class TestPTZControl:
     """Test PTZ (Pan-Tilt-Zoom) control endpoints."""
