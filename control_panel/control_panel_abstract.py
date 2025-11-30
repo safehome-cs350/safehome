@@ -10,6 +10,8 @@ class DeviceControlPanelAbstract(tk.Toplevel, ABC):
 
     def __init__(self, master=None):
         """Initialize the control panel GUI."""
+        self.armed = False
+
         # Initialize as a Toplevel window attached to `master`.
         tk.Toplevel.__init__(self, master=master)
         self.title("Control Panel")
@@ -311,6 +313,7 @@ class DeviceControlPanelAbstract(tk.Toplevel, ABC):
     def set_armed_led(self, on):
         """Set the armed LED state."""
         self.led_armed.config(bg="red" if on else "light gray")
+        self.armed = on
 
     def set_powered_led(self, on):
         """Set the power LED state."""

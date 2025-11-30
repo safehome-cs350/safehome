@@ -4,6 +4,9 @@ import tkinter as tk
 from enum import Enum
 
 import httpx
+import requests
+
+from frontend.security_api_client import SecurityAPIClient
 
 from .control_panel_abstract import DeviceControlPanelAbstract
 
@@ -41,6 +44,8 @@ class ControlPanel(DeviceControlPanelAbstract):
         self.user_id = "homeowner1"
         self.new_password = ""
         self.fail_count = 0
+        self.security_api_client = SecurityAPIClient()
+
         self.poll_alarm_loop()
 
     def handle_wrong_password(self):
@@ -199,8 +204,7 @@ class ControlPanel(DeviceControlPanelAbstract):
     def arm(self):
         """Arm the system."""
         try:
-            response = httpx.post(f"{self.SERVER_URL}/arm/?user_id={self.user_id}")
-            response.raise_for_status()
+            self.security_api_client.set_safehome_mode(self.user_id, "away")
             self.set_armed_led(True)
             self.set_display_away(True)
             self.set_display_stay(False)
@@ -213,8 +217,7 @@ class ControlPanel(DeviceControlPanelAbstract):
     def disarm(self):
         """Disarm the system."""
         try:
-            response = httpx.post(f"{self.SERVER_URL}/disarm/?user_id={self.user_id}")
-            response.raise_for_status()
+            self.security_api_client.set_safehome_mode(self.user_id, "home")
             self.set_armed_led(False)
             self.set_display_away(False)
             self.set_display_stay(True)
@@ -232,12 +235,21 @@ class ControlPanel(DeviceControlPanelAbstract):
 
     def poll_alarm(self):
         """Poll alarm from server."""
-        pass
+        try:
+            response = self.security_api_client.get_safehome_modes(self.user_id)
+            if response.get("current_mode") == "home":
+                self.disarm()
+                print("Disarm")
+            else:
+                self.arm()
+                print("Arm")
+        except requests.HTTPError:
+            return
 
     def poll_alarm_loop(self):
-        """Loop to poll alarm every second."""
+        """Loop to poll alarm every 0.5s."""
         self.poll_alarm()
-        self.after(1000, self.poll_alarm_loop)
+        self.after(500, self.poll_alarm_loop)
 
     def handle_number_input(self, number: str):
         """Handle number input."""
