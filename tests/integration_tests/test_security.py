@@ -260,14 +260,28 @@ def test_uc_2i(tk_root):
 
     # Test changing to "away" mode
     with patch("tkinter.messagebox.showinfo"):
-        security_panel.mode_var.set("away")
+        with patch("frontend.security_panel.ReconfirmDialog") as mock_dialog:
+            mock_dialog_instance = Mock()
+            mock_dialog_instance.result = True
+            mock_dialog_instance.address = "123 Main St"
+            mock_dialog_instance.phone_number = None
+            mock_dialog.return_value = mock_dialog_instance
+            with patch.object(security_panel, "wait_window"):
+                security_panel.on_mode_change("away")
         tk_root.update()
 
     assert security_panel.current_mode == "away"
 
     # Test changing to "home" mode
     with patch("tkinter.messagebox.showinfo"):
-        security_panel.mode_var.set("home")
+        with patch("frontend.security_panel.ReconfirmDialog") as mock_dialog:
+            mock_dialog_instance = Mock()
+            mock_dialog_instance.result = True
+            mock_dialog_instance.address = "123 Main St"
+            mock_dialog_instance.phone_number = None
+            mock_dialog.return_value = mock_dialog_instance
+            with patch.object(security_panel, "wait_window"):
+                security_panel.on_mode_change("home")
         tk_root.update()
 
     assert security_panel.current_mode == "home"

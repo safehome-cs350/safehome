@@ -39,9 +39,25 @@ def reconfirm(request: ReconfirmRequest):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user ID")
 
-    if not (
-        request.address == user.address or request.phone_number == user.phone_number
-    ):
+    # Verify that at least one field is provided
+    if not request.address and not request.phone_number:
+        raise HTTPException(
+            status_code=401, detail="Please provide address or phone number"
+        )
+
+    # Verify that at least one field matches (address OR phone number)
+    address_match = (
+        request.address is not None
+        and request.address.strip() != ""
+        and request.address == user.address
+    )
+    phone_match = (
+        request.phone_number is not None
+        and request.phone_number.strip() != ""
+        and request.phone_number == user.phone_number
+    )
+
+    if not (address_match or phone_match):
         raise HTTPException(status_code=401, detail="Information mismatch")
 
     return {"message": "Reconfirmed successfully"}

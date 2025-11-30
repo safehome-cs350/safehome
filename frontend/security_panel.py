@@ -5,6 +5,7 @@ from datetime import datetime
 from tkinter import messagebox, ttk
 
 from .api_client import APIClient
+from .reconfirm_dialog import ReconfirmDialog
 from .safety_zone_dialog import SafetyZoneDialog
 
 
@@ -35,8 +36,17 @@ class SecurityPanel(ttk.Frame):
         mode_frame = ttk.LabelFrame(left_frame, text="System Modes", padding=10)
         mode_frame.pack(fill=tk.X, pady=10)
 
-        self.mode_var = tk.StringVar(value="away")
-        self.mode_var.trace_add("write", self.on_mode_change)
+        # Header frame with label and current state
+        header_frame = ttk.Frame(mode_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(header_frame, text="Current Mode:").pack(side=tk.LEFT, padx=(0, 5))
+        self.current_mode_label = ttk.Label(
+            header_frame, text="Away", font=("TkDefaultFont", 10, "bold")
+        )
+        self.current_mode_label.pack(side=tk.LEFT)
+
+        # Mode buttons
         modes = [
             ("Away", "away"),
             ("Stay", "home"),
@@ -44,11 +54,19 @@ class SecurityPanel(ttk.Frame):
             ("Overnight Travel", "overnight_travel"),
         ]
 
+        self.mode_buttons = {}
         for text, value in modes:
-            radio = ttk.Radiobutton(
-                mode_frame, text=text, variable=self.mode_var, value=value
+            btn = ttk.Button(
+                mode_frame,
+                text=text,
+                command=lambda v=value: self.on_mode_button_click(v),
+                width=15,
             )
-            radio.pack(anchor=tk.W, pady=2)
+            btn.pack(anchor=tk.W, pady=2)
+            self.mode_buttons[value] = btn
+
+        # Keep mode_var for backward compatibility with existing code
+        self.mode_var = tk.StringVar(value="away")
 
         panic_frame = ttk.Frame(left_frame)
         panic_frame.pack(fill=tk.X, pady=10)
@@ -210,6 +228,7 @@ class SecurityPanel(ttk.Frame):
             # Set flag to prevent saving during load
             self._loading_mode = True
             self.mode_var.set(self.current_mode)
+            self.update_current_mode_display()
             self._loading_mode = False
 
             # Load intrusion log
@@ -278,13 +297,14 @@ class SecurityPanel(ttk.Frame):
         )
         if result:
             try:
-                mode_type = self.mode_var.get()
+                mode_type = self.current_mode or self.mode_var.get()
                 # Set the SafeHome mode (this also arms the system)
                 response = self.api_client.set_safehome_mode(
                     self.app.current_user, mode_type
                 )
                 self.system_armed = True
                 self.current_mode = response.get("current_mode", mode_type)
+                self.update_current_mode_display()
                 self.app.update_status(
                     f"System Armed - Mode: {self.current_mode.title()}"
                 )
@@ -649,8 +669,19 @@ class SecurityPanel(ttk.Frame):
         for entry in self.intrusion_log:
             self.log_tree.insert("", tk.END, values=entry)
 
-    def on_mode_change(self, *args):
-        """Handle mode change event - save mode to backend."""
+    def update_current_mode_display(self):
+        """Update the current mode label display."""
+        if self.current_mode:
+            mode_display = {
+                "away": "Away",
+                "home": "Stay",
+                "extended_travel": "Extend Travel",
+                "overnight_travel": "Overnight Travel",
+            }.get(self.current_mode, self.current_mode.title())
+            self.current_mode_label.config(text=mode_display)
+
+    def on_mode_button_click(self, new_mode):
+        """Handle mode button click - trigger mode change with reconfirmation."""
         if not self.app.current_user:
             return
 
@@ -658,22 +689,91 @@ class SecurityPanel(ttk.Frame):
         if self._loading_mode or self.current_mode is None:
             return
 
-        new_mode = self.mode_var.get()
         # Only save if mode actually changed
         if new_mode != self.current_mode:
+            self.on_mode_change(new_mode)
+
+    def on_mode_change(self, new_mode):
+        """Handle mode change event - save mode to backend with reconfirmation."""
+        if not self.app.current_user:
+            return
+
+        # Skip if this is during initialization
+        if self._loading_mode or self.current_mode is None:
+            return
+
+        # Only save if mode actually changed
+        if new_mode != self.current_mode:
+            # Store original mode to revert if needed
+            original_mode = self.current_mode
+
+            # Show reconfirmation dialog
+            reconfirm_dialog = ReconfirmDialog(self)
+            self.wait_window(reconfirm_dialog)
+
+            # If user cancelled, revert to original mode
+            if not reconfirm_dialog.result:
+                self._loading_mode = True
+                self.mode_var.set(original_mode)
+                self.current_mode = original_mode
+                self.update_current_mode_display()
+                self._loading_mode = False
+                return
+
+            # Verify identity using reconfirm API
+            try:
+                self.api_client.reconfirm(
+                    self.app.current_user,
+                    address=reconfirm_dialog.address,
+                    phone_number=reconfirm_dialog.phone_number,
+                )
+            except Exception as e:
+                error_message = str(e)
+                # Revert to original mode on verification failure
+                self._loading_mode = True
+                self.mode_var.set(original_mode)
+                self.current_mode = original_mode
+                self.update_current_mode_display()
+                self._loading_mode = False
+                if "Information mismatch" in error_message or "401" in error_message:
+                    messagebox.showerror(
+                        "Verification Failed",
+                        "Identity verification failed. "
+                        "Please check your address or phone number.",
+                    )
+                elif (
+                    "Connection" in error_message or "refused" in error_message.lower()
+                ):
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running.",
+                    )
+                else:
+                    messagebox.showerror(
+                        "Error", f"Failed to verify identity: {error_message}"
+                    )
+                return
+
+            # Identity verified, proceed with mode change
             try:
                 response = self.api_client.set_safehome_mode(
                     self.app.current_user, new_mode
                 )
                 self.current_mode = response.get("current_mode", new_mode)
                 self.system_armed = response.get("is_system_armed", False)
+                self.update_current_mode_display()
                 self.app.update_status(f"Mode changed to {self.current_mode.title()}")
                 # Reload data to ensure consistency
                 self.load_data()
             except Exception as e:
                 error_message = str(e)
                 # Revert to previous mode on error
-                self.mode_var.set(self.current_mode)
+                self._loading_mode = True
+                self.mode_var.set(original_mode)
+                self.current_mode = original_mode
+                self.update_current_mode_display()
+                self._loading_mode = False
                 if "doors and windows not closed" in error_message:
                     messagebox.showerror(
                         "Error",
