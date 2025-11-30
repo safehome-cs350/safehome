@@ -1722,15 +1722,6 @@ class TestSecurityPanel:
 
         root.destroy()
 
-
-"""Additional tests for security panel to reach 100% coverage."""
-
-from unittest.mock import patch
-
-
-class TestSecurityPanelAdditional:
-    """Additional test cases for SecurityPanel class to reach 100% coverage."""
-
     @patch("frontend.security_panel.messagebox")
     @patch("frontend.security_panel.APIClient")
     def test_arm_system_generic_error(self, mock_api_client_class, mock_messagebox):

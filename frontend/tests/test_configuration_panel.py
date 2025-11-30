@@ -153,7 +153,9 @@ class TestConfigurationPanel:
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             panel.turn_system_on()
 
-            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+            mock_messagebox.showerror.assert_called_once_with(
+                "Error", "No user logged in"
+            )
 
         root.destroy()
 
@@ -192,7 +194,9 @@ class TestConfigurationPanel:
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             panel.turn_system_off()
 
-            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+            mock_messagebox.showerror.assert_called_once_with(
+                "Error", "No user logged in"
+            )
 
         root.destroy()
 
@@ -231,7 +235,9 @@ class TestConfigurationPanel:
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             panel.reset_system()
 
-            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+            mock_messagebox.showerror.assert_called_once_with(
+                "Error", "No user logged in"
+            )
 
         root.destroy()
 
@@ -270,7 +276,9 @@ class TestConfigurationPanel:
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             panel.save_settings()
 
-            mock_messagebox.showerror.assert_called_once_with("Error", "No user logged in")
+            mock_messagebox.showerror.assert_called_once_with(
+                "Error", "No user logged in"
+            )
 
         root.destroy()
 
@@ -329,7 +337,9 @@ class TestConfigurationPanel:
 
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             with patch.object(panel.api_client, "config") as mock_config:
-                mock_config.side_effect = Exception("400: Delay time must be at least 300")
+                mock_config.side_effect = Exception(
+                    "400: Delay time must be at least 300"
+                )
                 panel.save_settings()
 
                 mock_messagebox.showerror.assert_called_once_with(

@@ -109,8 +109,6 @@ class TestSafeHomeApp:
             test_widget = tk.Label(app.root, text="test")
             test_widget.pack()
 
-            initial_count = len(app.root.winfo_children())
-
             with patch("frontend.main.MainDashboard") as mock_dashboard_class:
                 mock_dashboard = Mock()
                 mock_dashboard.pack = Mock()
@@ -182,6 +180,7 @@ class TestSafeHomeApp:
         # This test verifies the entry point exists
         # The actual execution is tested in test_main_function
         import frontend.main
+
         # Verify the entry point code exists
         assert hasattr(frontend.main, "main")
         assert callable(frontend.main.main)

@@ -370,7 +370,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "trigger_motion_sensor") as mock_trigger:
+            with patch.object(
+                panel.api_client, "trigger_motion_sensor"
+            ) as mock_trigger:
                 with patch.object(panel, "load_sensors") as mock_load:
                     panel.trigger_motion()
 
@@ -391,7 +393,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "release_motion_sensor") as mock_release:
+            with patch.object(
+                panel.api_client, "release_motion_sensor"
+            ) as mock_release:
                 with patch.object(panel, "load_sensors") as mock_load:
                     panel.release_motion()
 
@@ -698,7 +702,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "trigger_motion_sensor") as mock_trigger:
+            with patch.object(
+                panel.api_client, "trigger_motion_sensor"
+            ) as mock_trigger:
                 mock_trigger.side_effect = Exception("Generic error")
                 panel.trigger_motion()
 
@@ -719,7 +725,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "release_motion_sensor") as mock_release:
+            with patch.object(
+                panel.api_client, "release_motion_sensor"
+            ) as mock_release:
                 mock_release.side_effect = Exception("Generic error")
                 panel.release_motion()
 
@@ -874,7 +882,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "trigger_motion_sensor") as mock_trigger:
+            with patch.object(
+                panel.api_client, "trigger_motion_sensor"
+            ) as mock_trigger:
                 with patch.object(panel, "load_sensors") as mock_load:
                     panel.trigger_motion()
 
@@ -896,7 +906,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "release_motion_sensor") as mock_release:
+            with patch.object(
+                panel.api_client, "release_motion_sensor"
+            ) as mock_release:
                 with patch.object(panel, "load_sensors") as mock_load:
                     panel.release_motion()
 
@@ -1022,7 +1034,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "trigger_motion_sensor") as mock_trigger:
+            with patch.object(
+                panel.api_client, "trigger_motion_sensor"
+            ) as mock_trigger:
                 mock_trigger.side_effect = Exception("404: Sensor not found")
                 panel.trigger_motion()
 
@@ -1043,7 +1057,9 @@ class TestSensorPanel:
             panel.motion_sensor_ids = [1]
             panel.motion_id_var.set("1")
 
-            with patch.object(panel.api_client, "release_motion_sensor") as mock_release:
+            with patch.object(
+                panel.api_client, "release_motion_sensor"
+            ) as mock_release:
                 mock_release.side_effect = Exception("404: Sensor not found")
                 panel.release_motion()
 

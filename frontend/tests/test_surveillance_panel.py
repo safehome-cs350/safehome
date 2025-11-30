@@ -500,7 +500,9 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_load_cameras_connection_error(self, mock_api_client_class, mock_messagebox):
+    def test_load_cameras_connection_error(
+        self, mock_api_client_class, mock_messagebox
+    ):
         """Test load_cameras with connection error."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.side_effect = Exception("Connection refused")
@@ -508,9 +510,6 @@ class TestSurveillancePanel:
 
         root = tk.Tk()
         root.withdraw()
-        app = Mock()
-
-        panel = SurveillancePanel(root, app)
 
         mock_messagebox.showerror.assert_called()
         call_args = mock_messagebox.showerror.call_args[0]
@@ -553,7 +552,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_on_camera_select_disabled(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_on_camera_select_disabled(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test camera selection with disabled camera."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -590,7 +591,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_on_camera_select_offline(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_on_camera_select_offline(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test camera selection with offline camera."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -627,7 +630,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_on_camera_select_password_cancel(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_on_camera_select_password_cancel(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test camera selection with password prompt cancelled."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -677,7 +682,9 @@ class TestSurveillancePanel:
                 },
             ]
         }
-        mock_api_client.get_camera_view.side_effect = Exception("400: Camera is disabled")
+        mock_api_client.get_camera_view.side_effect = Exception(
+            "400: Camera is disabled"
+        )
         mock_api_client_class.return_value = mock_api_client
 
         root = tk.Tk()
@@ -697,7 +704,9 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_load_camera_view_401_password_required(self, mock_api_client_class, mock_messagebox):
+    def test_load_camera_view_401_password_required(
+        self, mock_api_client_class, mock_messagebox
+    ):
         """Test load_camera_view with 401 password required error."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -712,7 +721,9 @@ class TestSurveillancePanel:
                 },
             ]
         }
-        mock_api_client.get_camera_view.side_effect = Exception("401: Password required")
+        mock_api_client.get_camera_view.side_effect = Exception(
+            "401: Password required"
+        )
         mock_api_client_class.return_value = mock_api_client
 
         root = tk.Tk()
@@ -733,7 +744,9 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_load_camera_view_401_incorrect_password(self, mock_api_client_class, mock_messagebox):
+    def test_load_camera_view_401_incorrect_password(
+        self, mock_api_client_class, mock_messagebox
+    ):
         """Test load_camera_view with 401 incorrect password error."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -748,7 +761,9 @@ class TestSurveillancePanel:
                 },
             ]
         }
-        mock_api_client.get_camera_view.side_effect = Exception("401: Incorrect password")
+        mock_api_client.get_camera_view.side_effect = Exception(
+            "401: Incorrect password"
+        )
         mock_api_client_class.return_value = mock_api_client
 
         root = tk.Tk()
@@ -928,7 +943,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_set_camera_password_no_selection(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_set_camera_password_no_selection(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test set_camera_password with no selection."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {"cameras": []}
@@ -949,7 +966,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_set_camera_password_mismatch(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_set_camera_password_mismatch(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test set_camera_password with password mismatch."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -988,7 +1007,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_delete_camera_password_no_selection(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_delete_camera_password_no_selection(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test delete_camera_password with no selection."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {"cameras": []}
@@ -1009,7 +1030,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.simpledialog")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_delete_camera_password_no_password(self, mock_api_client_class, mock_messagebox, mock_simpledialog):
+    def test_delete_camera_password_no_password(
+        self, mock_api_client_class, mock_messagebox, mock_simpledialog
+    ):
         """Test delete_camera_password when camera has no password."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -1047,7 +1070,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.SensorPanel")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_open_sensor_panel(self, mock_api_client_class, mock_messagebox, mock_sensor_panel):
+    def test_open_sensor_panel(
+        self, mock_api_client_class, mock_messagebox, mock_sensor_panel
+    ):
         """Test opening sensor panel."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {"cameras": []}
@@ -1071,7 +1096,9 @@ class TestSurveillancePanel:
 
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_select_camera_from_floor_plan(self, mock_api_client_class, mock_messagebox):
+    def test_select_camera_from_floor_plan(
+        self, mock_api_client_class, mock_messagebox
+    ):
         """Test selecting camera from floor plan."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -1112,7 +1139,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.Image")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_show_floor_plan(self, mock_api_client_class, mock_messagebox, mock_image, mock_imagetk):
+    def test_show_floor_plan(
+        self, mock_api_client_class, mock_messagebox, mock_image, mock_imagetk
+    ):
         """Test showing floor plan."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
@@ -1135,13 +1164,9 @@ class TestSurveillancePanel:
 
         panel = SurveillancePanel(root, app)
 
-        # Mock floor plan file
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.__truediv__", return_value=Path("floorplan.png")):
                 panel.show_floor_plan()
-
-        # Window should be created
-        # (We can't easily verify the window content, but we can verify it doesn't error)
 
         root.destroy()
 
@@ -1182,7 +1207,9 @@ class TestSurveillancePanel:
     @patch("frontend.surveillance_panel.Image")
     @patch("frontend.surveillance_panel.messagebox")
     @patch("frontend.surveillance_panel.APIClient")
-    def test_view_camera_from_thumbnail(self, mock_api_client_class, mock_messagebox, mock_image, mock_imagetk):
+    def test_view_camera_from_thumbnail(
+        self, mock_api_client_class, mock_messagebox, mock_image, mock_imagetk
+    ):
         """Test viewing camera from thumbnail."""
         mock_api_client = Mock()
         mock_api_client.list_cameras.return_value = {
