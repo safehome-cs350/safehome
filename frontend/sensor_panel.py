@@ -9,10 +9,18 @@ from .api_client import APIClient
 class SensorPanel(tk.Toplevel):
     """Window for sensor management and testing."""
 
-    def __init__(self, parent):
-        """Initialize the sensor panel window."""
+    def __init__(self, parent, user_id=None, log_refresh_callback=None):
+        """Initialize the sensor panel window.
+
+        Args:
+            parent: Parent window
+            user_id: Optional user ID for intrusion log updates
+            log_refresh_callback: Optional callback to refresh intrusion log
+        """
         super().__init__(parent)
         self.api_client = APIClient()
+        self.user_id = user_id
+        self.log_refresh_callback = log_refresh_callback
 
         self.title("Sensor Test")
         self.geometry("800x600")
@@ -295,6 +303,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.arm_windoor_sensor(sensor_id)
             messagebox.showinfo("Success", f"Windoor sensor {sensor_id} armed")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -312,6 +326,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.disarm_windoor_sensor(sensor_id)
             messagebox.showinfo("Success", f"Windoor sensor {sensor_id} disarmed")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -331,6 +351,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.open_windoor_sensor(sensor_id)
             messagebox.showinfo("Success", f"Windoor sensor {sensor_id} opened")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -348,6 +374,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.close_windoor_sensor(sensor_id)
             messagebox.showinfo("Success", f"Windoor sensor {sensor_id} closed")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -367,6 +399,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.arm_motion_sensor(sensor_id)
             messagebox.showinfo("Success", f"Motion sensor {sensor_id} armed")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -384,6 +422,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.disarm_motion_sensor(sensor_id)
             messagebox.showinfo("Success", f"Motion sensor {sensor_id} disarmed")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -403,6 +447,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.trigger_motion_sensor(sensor_id)
             messagebox.showinfo("Success", f"Motion sensor {sensor_id} triggered")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:
@@ -422,6 +472,12 @@ class SensorPanel(tk.Toplevel):
             self.api_client.release_motion_sensor(sensor_id)
             messagebox.showinfo("Success", f"Motion sensor {sensor_id} released")
             self.load_sensors()
+            # Refresh intrusion log after action
+            if self.log_refresh_callback:
+                try:
+                    self.log_refresh_callback()
+                except Exception:
+                    pass  # Silently fail if log refresh fails
         except Exception as e:
             error_message = str(e)
             if "404" in error_message:

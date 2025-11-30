@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 
-from backend.common.device import CameraDB, SensorDB
+from backend.common.device import AlarmType, CameraDB, SensorDB
 from backend.common.user import UserDB
 from device.device_camera import DeviceCamera
 
@@ -674,6 +674,15 @@ async def arm_motion_detector(sensor_id: int):
     # Update state in database - no direct device manipulation
     SensorDB.update_motion_sensor(sensor_id, is_armed=True)
 
+    # Log the sensor arming event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Motion sensor {sensor_id} armed",
+    )
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_armed": True}
 
 
@@ -709,6 +718,15 @@ async def disarm_motion_detector(sensor_id: int):
 
     # Update state in database - no direct device manipulation
     SensorDB.update_motion_sensor(sensor_id, is_armed=False)
+
+    # Log the sensor disarming event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Motion sensor {sensor_id} disarmed",
+    )
 
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_armed": False}
 
@@ -746,6 +764,15 @@ async def trigger_motion_detector(sensor_id: int):
     # Update state in database - this would typically come from client/tester
     SensorDB.update_motion_sensor(sensor_id, is_triggered=True)
 
+    # Log the sensor trigger event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Motion sensor {sensor_id} triggered",
+    )
+
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_triggered": True}
 
 
@@ -781,6 +808,15 @@ async def release_motion_detector(sensor_id: int):
 
     # Update state in database - this would typically come from client/tester
     SensorDB.update_motion_sensor(sensor_id, is_triggered=False)
+
+    # Log the sensor release event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Motion sensor {sensor_id} released",
+    )
 
     return {"sensor_id": sensor_id, "sensor_type": "motion", "is_triggered": False}
 
@@ -820,6 +856,15 @@ async def arm_windoor_sensor(sensor_id: int):
     # Update state in database - no direct device manipulation
     SensorDB.update_windoor_sensor(sensor_id, is_armed=True)
 
+    # Log the sensor arming event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Windoor sensor {sensor_id} armed",
+    )
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_armed": True}
 
 
@@ -857,6 +902,15 @@ async def disarm_windoor_sensor(sensor_id: int):
 
     # Update state in database - no direct device manipulation
     SensorDB.update_windoor_sensor(sensor_id, is_armed=False)
+
+    # Log the sensor disarming event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Windoor sensor {sensor_id} disarmed",
+    )
 
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_armed": False}
 
@@ -896,6 +950,15 @@ async def open_windoor_sensor(sensor_id: int):
     # Update state in database - this would typically come from client/tester
     SensorDB.update_windoor_sensor(sensor_id, is_opened=True)
 
+    # Log the sensor open event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.DOOR_WINDOW_OPEN,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Windoor sensor {sensor_id} opened",
+    )
+
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_opened": True}
 
 
@@ -933,6 +996,15 @@ async def close_windoor_sensor(sensor_id: int):
 
     # Update state in database - this would typically come from client/tester
     SensorDB.update_windoor_sensor(sensor_id, is_opened=False)
+
+    # Log the sensor close event
+    user = get_default_user()
+    user.add_alarm_event(
+        alarm_type=AlarmType.INTRUSION,
+        device_id=sensor_id,
+        location=sensor_info.location,
+        description=f"Windoor sensor {sensor_id} closed",
+    )
 
     return {"sensor_id": sensor_id, "sensor_type": "windoor", "is_opened": False}
 

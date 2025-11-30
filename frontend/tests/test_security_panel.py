@@ -9,45 +9,61 @@ from frontend.security_panel import SecurityPanel
 class TestSecurityPanel:
     """Test cases for SecurityPanel class."""
 
-    def test_init(self):
+    @patch("frontend.security_panel.messagebox")
+    @patch("frontend.security_panel.APIClient")
+    def test_init(self, mock_api_client_class, mock_messagebox):
         """Test SecurityPanel initialization."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {"safety_zones": []}
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {"events": []}
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
 
         assert panel.app == app
         assert not panel.system_armed
-        assert panel.system_mode == "disarmed"
         assert isinstance(panel.safety_zones, dict)
         assert isinstance(panel.intrusion_log, list)
 
         root.destroy()
 
-    def test_initialize_sample_data(self):
-        """Test sample data initialization."""
-        root = tk.Tk()
-        root.withdraw()
-        app = Mock()
-        app.update_status = Mock()
-
-        panel = SecurityPanel(root, app)
-
-        assert len(panel.safety_zones) == 3
-        assert 1 in panel.safety_zones
-        assert 2 in panel.safety_zones
-        assert 3 in panel.safety_zones
-
-        root.destroy()
-
     @patch("frontend.security_panel.messagebox")
-    def test_arm_system(self, mock_messagebox):
+    @patch("frontend.security_panel.APIClient")
+    def test_arm_system(self, mock_api_client_class, mock_messagebox):
         """Test arming the system."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {"safety_zones": []}
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {"events": []}
+        mock_api_client.set_safehome_mode.return_value = {
+            "current_mode": "away",
+            "armed_devices": [1, 2],
+        }
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
@@ -56,58 +72,74 @@ class TestSecurityPanel:
         panel.arm_system()
 
         assert panel.system_armed
-        assert panel.status_label.cget("text") == "ARMED"
         mock_messagebox.askyesno.assert_called_once()
-        app.update_status.assert_called_once()
+        mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
 
     @patch("frontend.security_panel.messagebox")
-    def test_disarm_system(self, mock_messagebox):
+    @patch("frontend.security_panel.APIClient")
+    def test_disarm_system(self, mock_api_client_class, mock_messagebox):
         """Test disarming the system."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {"safety_zones": []}
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {"events": []}
+        mock_api_client.disarm.return_value = {"message": "System disarmed"}
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
         panel.system_armed = True
-        panel.arm_btn.config(state=tk.DISABLED)
-        panel.disarm_btn.config(state=tk.NORMAL)
         mock_messagebox.askyesno.return_value = True
 
         panel.disarm_system()
 
         assert not panel.system_armed
-        assert panel.status_label.cget("text") == "DISARMED"
         mock_messagebox.askyesno.assert_called_once()
-        app.update_status.assert_called_once()
+        mock_messagebox.showinfo.assert_called_once()
 
         root.destroy()
 
-    def test_add_log_entry(self):
-        """Test adding log entry."""
-        root = tk.Tk()
-        root.withdraw()
-        app = Mock()
-        app.update_status = Mock()
-
-        panel = SecurityPanel(root, app)
-        initial_count = len(panel.intrusion_log)
-
-        panel.add_log_entry("Zone 1", "Sensor 1", "Test event")
-
-        assert len(panel.intrusion_log) == initial_count + 1
-        assert panel.intrusion_log[0][2] == "Sensor 1"
-        assert panel.intrusion_log[0][3] == "Test event"
-
-        root.destroy()
-
-    def test_refresh_zones_display(self):
+    @patch("frontend.security_panel.messagebox")
+    @patch("frontend.security_panel.APIClient")
+    def test_refresh_zones_display(self, mock_api_client_class, mock_messagebox):
         """Test refreshing zones display."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {
+            "safety_zones": [
+                {
+                    "name": "Zone 1",
+                    "device_ids": [1, 2],
+                    "is_armed": False,
+                }
+            ]
+        }
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {"events": []}
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
@@ -119,15 +151,41 @@ class TestSecurityPanel:
 
         root.destroy()
 
-    def test_refresh_log_display(self):
+    @patch("frontend.security_panel.messagebox")
+    @patch("frontend.security_panel.APIClient")
+    def test_refresh_log_display(self, mock_api_client_class, mock_messagebox):
         """Test refreshing log display."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {"safety_zones": []}
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {
+            "events": [
+                {
+                    "id": 1,
+                    "timestamp": "2024-01-01T12:00:00",
+                    "alarm_type": "intrusion",
+                    "device_id": 1,
+                    "location": "Living Room",
+                    "description": "Test event",
+                    "is_resolved": False,
+                }
+            ]
+        }
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
-        panel.add_log_entry("Zone 1", "Sensor 1", "Test event")
 
         panel.refresh_log_display()
 
@@ -137,11 +195,29 @@ class TestSecurityPanel:
         root.destroy()
 
     @patch("frontend.security_panel.messagebox")
-    def test_trigger_panic(self, mock_messagebox):
+    @patch("frontend.security_panel.APIClient")
+    def test_trigger_panic(self, mock_api_client_class, mock_messagebox):
         """Test panic alarm trigger."""
+        mock_api_client = Mock()
+        mock_api_client.get_safety_zones.return_value = {"safety_zones": []}
+        mock_api_client.configure_safety_zone_interface.return_value = {
+            "available_devices": []
+        }
+        mock_api_client.get_safehome_modes.return_value = {
+            "current_mode": "away",
+            "modes_configuration": {},
+        }
+        mock_api_client.view_intrusion_log.return_value = {"events": []}
+        mock_api_client.panic_call.return_value = {
+            "event_id": 1,
+            "message": "Panic call initiated",
+        }
+        mock_api_client_class.return_value = mock_api_client
+
         root = tk.Tk()
         root.withdraw()
         app = Mock()
+        app.current_user = "test_user"
         app.update_status = Mock()
 
         panel = SecurityPanel(root, app)
@@ -149,28 +225,8 @@ class TestSecurityPanel:
 
         panel.trigger_panic()
 
-        assert len(panel.intrusion_log) > 0
-        panic_entries = [entry for entry in panel.intrusion_log if "PANIC" in entry[3]]
-        assert len(panic_entries) > 0
         mock_messagebox.askyesno.assert_called_once()
         mock_messagebox.showwarning.assert_called_once()
-
-        root.destroy()
-
-    @patch("frontend.security_panel.messagebox")
-    def test_call_monitoring_service(self, mock_messagebox):
-        """Test calling monitoring service."""
-        root = tk.Tk()
-        root.withdraw()
-        app = Mock()
-        app.update_status = Mock()
-
-        panel = SecurityPanel(root, app)
-
-        panel.call_monitoring_service()
-
-        assert len(panel.intrusion_log) > 0
-        assert "Monitoring" in panel.intrusion_log[0][3]
-        mock_messagebox.showinfo.assert_called_once()
+        mock_api_client.panic_call.assert_called_once()
 
         root.destroy()
