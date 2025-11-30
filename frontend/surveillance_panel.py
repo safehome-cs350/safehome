@@ -315,33 +315,48 @@ class SurveillancePanel(ttk.Frame):
 
             self.camera_canvas.delete("all")
 
-            # Decode base64 image if available
-            base64_image = response.get("current_view_base64")
-            if base64_image:
+            # Load image from local filesystem using URL from backend
+            image_url = response.get("image_url")
+            if image_url:
                 try:
-                    image_data = base64.b64decode(base64_image)
-                    img = Image.open(io.BytesIO(image_data))
-                    # Resize to fit canvas
-                    canvas_width = self.camera_canvas.winfo_width()
-                    canvas_height = self.camera_canvas.winfo_height()
-                    if canvas_width > 1 and canvas_height > 1:
-                        img = img.resize(
-                            (canvas_width, canvas_height), Image.Resampling.LANCZOS
+                    # Extract filename from URL (e.g., "/static/camera1.jpg" -> "camera1.jpg")
+                    # Handle both "/static/camera1.jpg" and "/camera1.jpg" formats
+                    filename = image_url.split("/")[-1]
+
+                    # Load image from project root directory
+                    image_path = self.project_root / filename
+
+                    if image_path.exists():
+                        img = Image.open(str(image_path))
+                        # Resize to fit canvas
+                        canvas_width = self.camera_canvas.winfo_width()
+                        canvas_height = self.camera_canvas.winfo_height()
+                        if canvas_width > 1 and canvas_height > 1:
+                            img = img.resize(
+                                (canvas_width, canvas_height), Image.Resampling.LANCZOS
+                            )
+                        else:
+                            img = img.resize((640, 480), Image.Resampling.LANCZOS)
+                        self.camera_image = ImageTk.PhotoImage(img)
+                        self.camera_canvas.create_image(
+                            canvas_width // 2 if canvas_width > 1 else 320,
+                            canvas_height // 2 if canvas_height > 1 else 240,
+                            image=self.camera_image,
+                            anchor=tk.CENTER,
                         )
                     else:
-                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
-                    self.camera_image = ImageTk.PhotoImage(img)
-                    self.camera_canvas.create_image(
-                        canvas_width // 2 if canvas_width > 1 else 320,
-                        canvas_height // 2 if canvas_height > 1 else 240,
-                        image=self.camera_image,
-                        anchor=tk.CENTER,
-                    )
+                        self.camera_canvas.create_text(
+                            320,
+                            240,
+                            text=f"Image not found: {filename}",
+                            fill="white",
+                            font=("Arial", 14),
+                        )
                 except Exception as e:
                     self.camera_canvas.create_text(
                         320,
                         240,
-                        text=f"Image decode error: {e}",
+                        text=f"Failed to load image: {str(e)}",
                         fill="white",
                         font=("Arial", 14),
                     )
