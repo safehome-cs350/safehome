@@ -1,7 +1,5 @@
 """Surveillance panel for camera management."""
 
-import base64
-import io
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
@@ -315,20 +313,14 @@ class SurveillancePanel(ttk.Frame):
 
             self.camera_canvas.delete("all")
 
-            # Load image from local filesystem using URL from backend
             image_url = response.get("image_url")
             if image_url:
                 try:
-                    # Extract filename from URL (e.g., "/static/camera1.jpg" -> "camera1.jpg")
-                    # Handle both "/static/camera1.jpg" and "/camera1.jpg" formats
                     filename = image_url.split("/")[-1]
-
-                    # Load image from project root directory
                     image_path = self.project_root / filename
 
                     if image_path.exists():
                         img = Image.open(str(image_path))
-                        # Resize to fit canvas
                         canvas_width = self.camera_canvas.winfo_width()
                         canvas_height = self.camera_canvas.winfo_height()
                         if canvas_width > 1 and canvas_height > 1:
@@ -761,8 +753,7 @@ class SurveillancePanel(ttk.Frame):
                 break
 
     def show_thumbnails(self):
-        """Show camera thumbnails for all eligible cameras (excluding password-protected and disabled)."""
-        # Filter cameras: exclude those with passwords or disabled
+        """Show camera thumbnails for all eligible cameras."""
         eligible_cameras = [
             (cam_id, camera)
             for cam_id, camera in self.cameras.items()
@@ -838,14 +829,14 @@ class SurveillancePanel(ttk.Frame):
                             # Make thumbnail clickable
                             def make_click_handler(cid):
                                 def handler(event):
-                                    self.view_camera_from_thumbnail(cid, thumbnail_window)
+                                    self.view_camera_from_thumbnail(
+                                        cid, thumbnail_window
+                                    )
 
                                 return handler
 
                             img_label.bind("<Button-1>", make_click_handler(cam_id))
-                            thumb_frame.bind(
-                                "<Button-1>", make_click_handler(cam_id)
-                            )
+                            thumb_frame.bind("<Button-1>", make_click_handler(cam_id))
 
                             # Add caption
                             ttk.Label(
