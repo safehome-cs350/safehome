@@ -761,37 +761,24 @@ class SurveillancePanel(ttk.Frame):
                 break
 
     def show_thumbnails(self):
-        """Show camera thumbnails."""
-        selected = self.camera_tree.selection()
-        if not selected:
+        """Show camera thumbnails for all eligible cameras (excluding password-protected and disabled)."""
+        # Filter cameras: exclude those with passwords or disabled
+        eligible_cameras = [
+            (cam_id, camera)
+            for cam_id, camera in self.cameras.items()
+            if not camera["has_password"] and camera["is_enabled"]
+        ]
+
+        if not eligible_cameras:
             messagebox.showinfo(
-                "No Selection", "Please select a camera to view thumbnails"
+                "No Cameras",
+                "No eligible cameras available. "
+                "Cameras with passwords or disabled cameras are excluded.",
             )
             return
 
-        item = self.camera_tree.item(selected[0])
-        cam_id = int(item["tags"][0])
-
-        try:
-            thumbnails = self.api_client.get_camera_thumbnails(cam_id)
-        except Exception as e:
-            error_message = str(e)
-            if "404" in error_message:
-                messagebox.showerror("Error", "Camera not found")
-            elif "Connection" in error_message or "refused" in error_message.lower():
-                messagebox.showerror(
-                    "Error",
-                    "Cannot connect to backend server. "
-                    "Please ensure the backend is running.",
-                )
-            else:
-                messagebox.showerror(
-                    "Error", f"Failed to load thumbnails: {error_message}"
-                )
-            return
-
         thumbnail_window = tk.Toplevel(self)
-        thumbnail_window.title(f"Camera Thumbnails - {self.cameras[cam_id]['name']}")
+        thumbnail_window.title("Camera Thumbnails")
         thumbnail_window.geometry("900x600")
 
         canvas_frame = ttk.Frame(thumbnail_window)
@@ -813,31 +800,94 @@ class SurveillancePanel(ttk.Frame):
 
         row = 0
         col = 0
-        for thumb in thumbnails:
-            thumb_frame = ttk.LabelFrame(
-                scrollable_frame,
-                text=f"Captured: {thumb.get('captured_at', 'Unknown')}",
-                padding=5,
-            )
-            thumb_frame.grid(row=row, column=col, padx=10, pady=10)
+        thumbnails_loaded = 0
 
-            # Display thumbnail URL or placeholder
-            image_url = thumb.get("image_url", "")
-            if image_url:
-                ttk.Label(thumb_frame, text=f"Image: {image_url}").pack()
-            else:
-                ttk.Label(thumb_frame, text="No thumbnail available").pack()
+        for cam_id, camera in eligible_cameras:
+            try:
+                # The API returns a single thumbnail dict (not a list)
+                thumb = self.api_client.get_camera_thumbnails(cam_id)
 
-            ttk.Label(thumb_frame, text=f"ID: {thumb.get('id', 'N/A')}").pack()
+                if not thumb:
+                    continue
+                thumb_frame = ttk.LabelFrame(
+                    scrollable_frame,
+                    text=f"{camera['name']} - {camera['location']}",
+                    padding=5,
+                )
+                thumb_frame.grid(row=row, column=col, padx=10, pady=10)
 
-            col += 1
-            if col >= 3:
-                col = 0
-                row += 1
+                # Load and display thumbnail image
+                image_url = thumb.get("image_url", "")
+                if image_url:
+                    try:
+                        # Extract filename from URL
+                        filename = image_url.split("/")[-1]
+                        image_path = self.project_root / filename
 
-        if not thumbnails:
+                        if image_path.exists():
+                            # Load and resize thumbnail
+                            img = Image.open(str(image_path))
+                            img.thumbnail((200, 150), Image.Resampling.LANCZOS)
+                            thumb_image = ImageTk.PhotoImage(img)
+
+                            # Create label with image
+                            img_label = ttk.Label(thumb_frame, image=thumb_image)
+                            img_label.image = thumb_image  # Keep a reference
+                            img_label.pack(pady=5)
+
+                            # Make thumbnail clickable
+                            def make_click_handler(cid):
+                                def handler(event):
+                                    self.view_camera_from_thumbnail(cid, thumbnail_window)
+
+                                return handler
+
+                            img_label.bind("<Button-1>", make_click_handler(cam_id))
+                            thumb_frame.bind(
+                                "<Button-1>", make_click_handler(cam_id)
+                            )
+
+                            # Add caption
+                            ttk.Label(
+                                thumb_frame,
+                                text=f"Captured: {thumb.get('captured_at', 'Unknown')}",
+                                font=("Arial", 9),
+                            ).pack()
+                        else:
+                            ttk.Label(
+                                thumb_frame, text=f"Image not found: {filename}"
+                            ).pack()
+                    except Exception as e:
+                        ttk.Label(
+                            thumb_frame,
+                            text=f"Failed to load image: {str(e)}",
+                        ).pack()
+                else:
+                    ttk.Label(thumb_frame, text="No thumbnail available").pack()
+
+                thumbnails_loaded += 1
+                col += 1
+                if col >= 3:
+                    col = 0
+                    row += 1
+
+            except Exception as e:
+                error_message = str(e)
+                if "Connection" in error_message or "refused" in error_message.lower():
+                    messagebox.showerror(
+                        "Error",
+                        "Cannot connect to backend server. "
+                        "Please ensure the backend is running.",
+                    )
+                    thumbnail_window.destroy()
+                    return
+                # Continue with other cameras if one fails
+                continue
+
+        if thumbnails_loaded == 0:
             ttk.Label(
-                scrollable_frame, text="No thumbnails available for this camera"
+                scrollable_frame,
+                text="No thumbnails available for eligible cameras",
             ).pack(pady=20)
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
