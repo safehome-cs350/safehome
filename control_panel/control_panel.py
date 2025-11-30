@@ -239,11 +239,9 @@ class ControlPanel(DeviceControlPanelAbstract):
             response = self.security_api_client.get_safehome_modes(self.user_id)
             if response.get("current_mode") == "home":
                 self.disarm()
-                print("Disarm")
             else:
                 self.arm()
-                print("Arm")
-        except requests.HTTPError:
+        except requests.RequestException:
             return
 
     def poll_alarm_loop(self):
