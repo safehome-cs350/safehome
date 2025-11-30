@@ -161,16 +161,17 @@ class SensorDB:
     """Sensor database class."""
 
     motion_sensors = {
-        1: SensorInfo(sensor_id=1, sensor_type="motion", location="거실"),
-        2: SensorInfo(sensor_id=2, sensor_type="motion", location="현관"),
-        3: SensorInfo(sensor_id=3, sensor_type="motion", location="침실"),
+        1: SensorInfo(sensor_id=1, sensor_type="motion", location="정문"),
+        2: SensorInfo(sensor_id=2, sensor_type="motion", location="후문"),
     }
 
     windoor_sensors = {
-        1: SensorInfo(sensor_id=1, sensor_type="windoor", location="정문"),
-        2: SensorInfo(sensor_id=2, sensor_type="windoor", location="뒷문"),
-        3: SensorInfo(sensor_id=3, sensor_type="windoor", location="거실 창문"),
-        4: SensorInfo(sensor_id=4, sensor_type="windoor", location="침실 창문"),
+        1: SensorInfo(sensor_id=1, sensor_type="windoor", location="DR 좌상"),
+        2: SensorInfo(sensor_id=2, sensor_type="windoor", location="KIT 좌하"),
+        3: SensorInfo(sensor_id=3, sensor_type="windoor", location="KIT 우상"),
+        4: SensorInfo(sensor_id=4, sensor_type="windoor", location="LR 우상"),
+        5: SensorInfo(sensor_id=5, sensor_type="windoor", location="LR 우측"),
+        6: SensorInfo(sensor_id=6, sensor_type="windoor", location="LR 우하"),
     }
 
     @classmethod
