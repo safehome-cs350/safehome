@@ -628,11 +628,11 @@ async def list_all_sensors():
     """List all available sensors."""
     sensors = []
 
-    # Add motion sensors
-    for sensor_info in SensorDB.get_all_motion_sensors():
+    # Add motion sensors - use dictionary key as unique sensor_id
+    for sensor_key, sensor_info in SensorDB.motion_sensors.items():
         sensors.append(
             SensorStatus(
-                sensor_id=sensor_info.sensor_id,
+                sensor_id=sensor_key,  # Use dictionary key for unique ID
                 sensor_type="motion",
                 is_armed=sensor_info.is_armed,
                 is_triggered=sensor_info.is_triggered,
@@ -640,11 +640,11 @@ async def list_all_sensors():
             )
         )
 
-    # Add windoor sensors
-    for sensor_info in SensorDB.get_all_windoor_sensors():
+    # Add windoor sensors - use dictionary key as unique sensor_id
+    for sensor_key, sensor_info in SensorDB.windoor_sensors.items():
         sensors.append(
             SensorStatus(
-                sensor_id=sensor_info.sensor_id,
+                sensor_id=sensor_key,  # Use dictionary key for unique ID
                 sensor_type="windoor",
                 is_armed=sensor_info.is_armed,
                 is_triggered=sensor_info.is_opened,
@@ -851,6 +851,14 @@ async def release_motion_detector(sensor_id: int):
                 }
             },
         },
+        400: {
+            "description": "Doors and windows not closed",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "doors and windows not closed"}
+                }
+            },
+        },
         404: {
             "description": "Window/door sensor not found",
             "content": {
@@ -866,6 +874,10 @@ async def arm_windoor_sensor(sensor_id: int):
     sensor_info = SensorDB.get_windoor_sensor(sensor_id)
     if not sensor_info:
         raise HTTPException(status_code=404, detail="Window/door sensor not found")
+
+    # Check if door/window is open before allowing arming
+    if sensor_info.is_opened:
+        raise HTTPException(status_code=400, detail="doors and windows not closed")
 
     # Update state in database - no direct device manipulation
     SensorDB.update_windoor_sensor(sensor_id, is_armed=True)
@@ -1088,7 +1100,10 @@ async def close_windoor_sensor(sensor_id: int):
     },
 )
 async def get_sensor_status(sensor_type: str, sensor_id: int):
-    """Get detailed status of a sensor."""
+    """Get detailed status of a sensor.
+
+    sensor_id is the dictionary key (unique identifier) for the sensor.
+    """
     if sensor_type == "motion":
         sensor_info = SensorDB.get_motion_sensor(sensor_id)
         if not sensor_info:
@@ -1098,7 +1113,7 @@ async def get_sensor_status(sensor_type: str, sensor_id: int):
         # Provide a simulated reading based on current state
         reading = 1 if sensor_info.is_triggered else 0
         return {
-            "sensor_id": sensor_id,
+            "sensor_id": sensor_id,  # Dictionary key (unique identifier)
             "sensor_type": "motion",
             "location": sensor_info.location,
             "is_armed": sensor_info.is_armed,
@@ -1115,7 +1130,7 @@ async def get_sensor_status(sensor_type: str, sensor_id: int):
         # Provide a simulated reading based on current state
         reading = 1 if sensor_info.is_opened else 0
         return {
-            "sensor_id": sensor_id,
+            "sensor_id": sensor_id,  # Dictionary key (unique identifier)
             "sensor_type": "windoor",
             "location": sensor_info.location,
             "is_armed": sensor_info.is_armed,
