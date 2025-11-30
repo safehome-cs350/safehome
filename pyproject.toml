@@ -26,3 +26,11 @@ select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.setuptools]
+packages = [
+    "backend",
+    "control_panel",
+    "device",
+    "frontend",
+]

@@ -11,11 +11,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /workspace
 
-COPY pyproject.toml ./
+COPY . .
 
 RUN pip install --no-cache-dir -e .
-
-COPY . .
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
