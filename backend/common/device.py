@@ -80,6 +80,7 @@ class CameraInfo:
     is_online: bool = True
     has_password: bool = False
     password: str | None = None
+    url: str = ""  # Camera thumbnail file path
 
 
 @dataclass
@@ -106,6 +107,7 @@ class CameraDB:
             is_enabled=True,
             has_password=False,
             password=None,
+            url="/static/camera1.jpg",
         ),
         2: CameraInfo(
             camera_id=2,
@@ -114,6 +116,7 @@ class CameraDB:
             is_enabled=True,
             has_password=True,
             password="camera123",
+            url="/static/camera2.jpg",
         ),
         3: CameraInfo(
             camera_id=3,
@@ -122,6 +125,7 @@ class CameraDB:
             is_enabled=False,
             has_password=False,
             password=None,
+            url="/static/camera3.jpg",
         ),
     }
 
@@ -144,6 +148,12 @@ class CameraDB:
                     setattr(cls.cameras[camera_id], key, value)
             return True
         return False
+
+    @classmethod
+    def get_url(cls, camera_id: int) -> str:
+        """Get camera thumbnail file path."""
+        cam = cls.get_camera(camera_id)
+        return cam.url if cam else ""
 
 
 @dataclass

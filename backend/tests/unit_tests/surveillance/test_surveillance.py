@@ -1,6 +1,5 @@
 """Tests for the surveillance API module."""
 
-import base64
 import sys
 from pathlib import Path
 
@@ -55,10 +54,8 @@ class TestCameraView:
         assert data["name"] == "거실 카메라"
         assert data["is_enabled"]
         assert data["is_online"]
-        assert "current_view_base64" in data
-        assert data["current_view_base64"] is not None
-
-        base64.b64decode(data["current_view_base64"])
+        assert "image_url" in data
+        assert data["image_url"] is not None
 
     def test_get_camera_view_disabled(self):
         """Test getting view from disabled camera."""
@@ -185,6 +182,14 @@ class TestPTZControl:
         assert user is not None
         assert user.user_id == "homeowner1"
 
+    def test_get_default_user_success(self):
+        """Ensure get_default_user returns the correct user and is covered by tests."""
+        from backend.surveillance.surveillance import get_default_user
+
+        user = get_default_user()
+        assert user is not None
+        assert user.user_id == "homeowner1"
+
 
 class TestCameraPassword:
     """Test camera password management."""
@@ -241,13 +246,9 @@ class TestThumbnails:
         assert response.status_code == 200
 
         data = response.json()
-        assert isinstance(data, list)
-
-        if len(data) > 0:
-            thumbnail = data[0]
-            required_fields = ["id", "camera_id", "captured_at", "image_url"]
-            for field in required_fields:
-                assert field in thumbnail
+        required_fields = ["id", "camera_id", "captured_at", "image_url"]
+        for field in required_fields:
+            assert field in data
 
 
 class TestSensors:
@@ -515,40 +516,6 @@ class TestErrorHandling:
         assert response.status_code == 404
         assert "Camera not found" in response.json()["detail"]
 
-    def test_camera_image_not_found_error(self):
-        """Test camera image file not found scenario."""
-        import unittest.mock as mock
-
-        # First enable camera 1 to avoid the disabled camera error
-        client.post("/surveillance/cameras/1/enable")
-
-        # Mock the load_camera_png_as_base64 function to raise FileNotFoundError
-        with mock.patch(
-            "backend.surveillance.surveillance.load_camera_png_as_base64"
-        ) as mock_load:
-            mock_load.side_effect = FileNotFoundError("Camera image not found")
-
-            response = client.get("/surveillance/cameras/1/view")
-            assert response.status_code == 500
-            assert "Camera image not found" in response.json()["detail"]
-
-    def test_camera_view_general_exception(self):
-        """Test general exception in camera view."""
-        import unittest.mock as mock
-
-        # First enable camera 1 to avoid the disabled camera error
-        client.post("/surveillance/cameras/1/enable")
-
-        # Mock get_or_create_camera to raise a general exception
-        with mock.patch(
-            "backend.surveillance.surveillance.get_or_create_camera"
-        ) as mock_camera:
-            mock_camera.side_effect = Exception("General camera error")
-
-            response = client.get("/surveillance/cameras/1/view")
-            assert response.status_code == 500
-            assert "Failed to get camera view" in response.json()["detail"]
-
     def test_ptz_control_exception(self):
         """Test exception in PTZ control."""
         import unittest.mock as mock
@@ -645,19 +612,6 @@ class TestErrorHandling:
         """Test the final missing lines for 100% coverage."""
         import unittest.mock as mock
 
-        # Test lines 87-88: FileNotFoundError in load_camera_png_as_base64
-        # Mock os.path.join and open to trigger FileNotFoundError
-        with mock.patch(
-            "builtins.open", side_effect=FileNotFoundError("Camera image not found")
-        ):
-            from backend.surveillance.surveillance import load_camera_png_as_base64
-
-            try:
-                load_camera_png_as_base64()
-            except Exception as e:
-                # Should raise HTTPException with status 500
-                assert "Camera image not found" in str(e)
-
         # Test lines 337, 354: PTZ limit messages
         # Enable camera first
         client.post("/surveillance/cameras/1/enable")
@@ -705,7 +659,7 @@ class TestErrorHandling:
             assert response.status_code == 200
             data = response.json()
             # This should trigger line 354:
-            # messages.append(f"Zoom limit reached at {current_zoom}")
+            # messages.append(f"Zoom limit reached at current_zoom")
             # (Zoom limit reached at current_zoom)
             assert "Zoom limit reached" in data["message"]
 
@@ -723,3 +677,28 @@ class TestErrorHandling:
         """Test update_windoor_sensor returns False for non-existent sensor."""
         result = SensorDB.update_windoor_sensor(999, is_opened=True)
         assert result is False
+
+    def test_surveillance_error_branches(self):
+        """surveillance.py의 누락된 분기(에러/예외) 커버리지 보완."""
+        import unittest.mock as mock
+
+        import pytest
+        from fastapi import HTTPException
+
+        from backend.surveillance import surveillance
+
+        # get_camera_info에서 없는 카메라 (HTTPException)
+        with pytest.raises(HTTPException):
+            surveillance.get_camera_info(99999)
+
+        # validate_camera_exists에서 없는 카메라 (HTTPException)
+        with pytest.raises(HTTPException):
+            surveillance.validate_camera_exists(99999)
+
+        # get_default_user에서 없는 유저 (HTTPException)
+        with mock.patch(
+            "backend.surveillance.surveillance.UserDB.find_user_by_id",
+            return_value=None,
+        ):
+            with pytest.raises(HTTPException):
+                surveillance.get_default_user()

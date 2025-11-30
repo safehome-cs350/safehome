@@ -1,6 +1,5 @@
 """Surveillance module for handling camera and sensor operations."""
 
-import base64
 import os
 import sys
 import threading
@@ -29,7 +28,7 @@ class CameraViewResponse(BaseModel):
     is_enabled: bool
     is_online: bool
     stream_url: str
-    current_view_base64: Optional[str] = None
+    image_url: str
     pan_position: int = 0
     zoom_level: int = 2
     current_time: int = 0
@@ -108,17 +107,6 @@ def get_or_create_camera(camera_id: int) -> DeviceCamera:
             camera_instances[camera_id] = DeviceCamera()
             camera_instances[camera_id].set_id(camera_id)
         return camera_instances[camera_id]
-
-
-def load_camera_png_as_base64() -> str:
-    """Load camera image and return as base64 string."""
-    camera_png_path = os.path.join(os.path.dirname(__file__), "../../img/camera.png")
-    try:
-        with open(camera_png_path, "rb") as image_file:
-            img_str = base64.b64encode(image_file.read()).decode()
-            return img_str
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Camera image not found") from None
 
 
 # Default user for demo purposes - in real implementation this would come
@@ -236,10 +224,7 @@ async def list_cameras():
                         "is_enabled": True,
                         "is_online": True,
                         "stream_url": "https://example.com/stream/cam1.m3u8",
-                        "current_view_base64": (
-                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
-                            "AAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-                        ),
+                        "image_url": "/camera1.jpg",
                         "pan_position": 0,
                         "zoom_level": 2,
                         "current_time": 0,
@@ -297,15 +282,13 @@ async def display_camera_view(camera_id: int, password: str | None = None):
 
     try:
         device_camera = get_or_create_camera(camera_id)
-        view_base64 = load_camera_png_as_base64()
-
         return CameraViewResponse(
             camera_id=camera_id,
             name=camera.name,
             is_enabled=camera.is_enabled,
             is_online=camera.is_online,
             stream_url=f"https://example.com/stream/cam{camera_id}.m3u8",
-            current_view_base64=view_base64,
+            image_url=camera.url,
             pan_position=device_camera.pan,
             zoom_level=device_camera.zoom,
             current_time=device_camera.time,
@@ -479,21 +462,19 @@ async def delete_camera_password(camera_id: int):
 
 @router.get(
     "/cameras/{camera_id}/thumbnails",
-    response_model=List[ThumbnailShot],
-    summary="UC1.f. Get camera thumbnail history",
+    response_model=ThumbnailShot,
+    summary="UC1.f. Get camera thumbnail",
     responses={
         200: {
-            "description": "Successfully retrieved camera thumbnails",
+            "description": "Successfully retrieved camera thumbnail",
             "content": {
                 "application/json": {
-                    "example": [
-                        {
-                            "id": 101,
-                            "camera_id": 1,
-                            "captured_at": "2025-11-19T10:00:00Z",
-                            "image_url": "https://example.com/thumbs/1_1.jpg",
-                        }
-                    ]
+                    "example": {
+                        "id": 101,
+                        "camera_id": 1,
+                        "captured_at": "2025-11-19T10:00:00Z",
+                        "image_url": "/camera1.jpg",
+                    }
                 }
             },
         },
@@ -506,25 +487,18 @@ async def delete_camera_password(camera_id: int):
     },
 )
 async def list_thumbnails(camera_id: int):
-    """List camera thumbnail history."""
+    """Get camera thumbnail (only one per camera)."""
     validate_camera_exists(camera_id)
 
-    fake_thumbnails = [
-        ThumbnailShot(
-            id=100 + camera_id,
-            camera_id=camera_id,
-            captured_at="2025-11-19T10:00:00Z",
-            image_url=f"https://example.com/thumbs/{camera_id}_1.jpg",
-        ),
-        ThumbnailShot(
-            id=200 + camera_id,
-            camera_id=camera_id,
-            captured_at="2025-11-19T11:00:00Z",
-            image_url=f"https://example.com/thumbs/{camera_id}_2.jpg",
-        ),
-    ]
+    url = CameraDB.get_url(camera_id)
+    thumbnail = ThumbnailShot(
+        id=100 + camera_id,
+        camera_id=camera_id,
+        captured_at="2025-11-19T10:00:00Z",
+        image_url=url,
+    )
 
-    return fake_thumbnails
+    return thumbnail
 
 
 @router.post(
