@@ -211,6 +211,7 @@ def test_uc_3d(tk_root):
     panel.camera_tree.selection_set(item)
 
     with (
+        patch("tkinter.simpledialog.askstring", return_value="camera123"),
         patch("tkinter.messagebox.askyesno", return_value=True),
         patch("tkinter.messagebox.showinfo") as mock_showinfo,
     ):
