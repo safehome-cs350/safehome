@@ -203,29 +203,21 @@ class ControlPanel(DeviceControlPanelAbstract):
 
     def arm(self):
         """Arm the system."""
-        try:
-            self.security_api_client.set_safehome_mode(self.user_id, "away")
-            self.set_armed_led(True)
-            self.set_display_away(True)
-            self.set_display_stay(False)
-            self.set_display_short_message1("System Armed")
-            self.set_display_short_message2("Choose Action")
-        except httpx.HTTPError:
-            self.set_display_short_message1("Fail Arming")
-            self.set_display_short_message2("Choose Action")
+        self.security_api_client.set_safehome_mode(self.user_id, "away")
+        self.set_armed_led(True)
+        self.set_display_away(True)
+        self.set_display_stay(False)
+        self.set_display_short_message1("System Armed")
+        self.set_display_short_message2("Choose Action")
 
     def disarm(self):
         """Disarm the system."""
-        try:
-            self.security_api_client.set_safehome_mode(self.user_id, "home")
-            self.set_armed_led(False)
-            self.set_display_away(False)
-            self.set_display_stay(True)
-            self.set_display_short_message1("System Disarmed")
-            self.set_display_short_message2("Choose Action")
-        except httpx.HTTPError:
-            self.set_display_short_message1("Fail Disarming")
-            self.set_display_short_message2("Choose Action")
+        self.security_api_client.set_safehome_mode(self.user_id, "home")
+        self.set_armed_led(False)
+        self.set_display_away(False)
+        self.set_display_stay(True)
+        self.set_display_short_message1("System Disarmed")
+        self.set_display_short_message2("Choose Action")
 
     def panic(self):
         """Trigger panic alarm."""
@@ -235,17 +227,11 @@ class ControlPanel(DeviceControlPanelAbstract):
             "user_id": self.user_id,
             "location": "home",
         }
-        try:
-            with httpx.Client(timeout=5) as client:
-                response = client.post(url, json=payload)
-                response.raise_for_status()
-            self.set_armed_led(True)
-            self.set_display_short_message1("PANIC ALARM!")
-            self.set_display_short_message2("Help on the way")
-        except httpx.HTTPStatusError:
-            return
-        except httpx.RequestError:
-            return
+        with httpx.Client(timeout=5) as client:
+            client.post(url, json=payload)
+        self.set_armed_led(True)
+        self.set_display_short_message1("PANIC ALARM!")
+        self.set_display_short_message2("Help on the way")
 
     def poll_alarm(self):
         """Poll alarm from server."""
@@ -421,10 +407,10 @@ class ControlPanel(DeviceControlPanelAbstract):
 
     def button_sharp(self):
         """Handle button # press."""
-        self.disarm()
         if self.state == ControlPanelState.LOCKED:
             return
         # Reset sequence
+        self.disarm()
         self.button_sequence = ""
         self.state = ControlPanelState.IDLE
         self.set_armed_led(False)

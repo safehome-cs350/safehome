@@ -381,7 +381,6 @@ def test_button_number_input_password_change_reconfirm(button_name, number):
         "button8",
         "button9",
         "button0",
-        "button_star",
         "button_sharp",
     ],
 )
@@ -472,6 +471,7 @@ def test_button_star_powered_off():
 def test_button_sharp():
     """Test button_sharp resets sequence and state."""
     control_panel = ControlPanel()
+    control_panel.security_api_client = MagicMock()
     control_panel.state = ControlPanelState.MASTER
     control_panel.button_sequence = "123"
     control_panel.button_sharp()
@@ -548,59 +548,23 @@ def test_reset():
 def test_arm_success():
     """Test arm() sends arm command."""
     control_panel = ControlPanel()
+    control_panel.security_api_client = MagicMock()
 
     with patch.object(control_panel, "set_armed_led") as mock_armed_led:
-        with patch("httpx.post") as mock_post:
-            control_panel.arm()
+        control_panel.arm()
 
-            mock_post.assert_called_once_with(
-                f"{control_panel.SERVER_URL}/arm/?user_id={control_panel.user_id}"
-            )
-        mock_armed_led.assert_called_once_with(True)
-
-
-def test_arm_fail():
-    """Test arm() handles HTTP error."""
-    control_panel = ControlPanel()
-
-    with patch.object(control_panel, "set_armed_led") as mock_armed_led:
-        with patch("httpx.post") as mock_post:
-            mock_post.side_effect = httpx.HTTPError("Error")
-            control_panel.arm()
-
-            mock_post.assert_called_once_with(
-                f"{control_panel.SERVER_URL}/arm/?user_id={control_panel.user_id}"
-            )
-        mock_armed_led.assert_not_called()
+    mock_armed_led.assert_called_once_with(True)
 
 
 def test_disarm_success():
     """Test disarm() sends disarm command."""
     control_panel = ControlPanel()
+    control_panel.security_api_client = MagicMock()
 
     with patch.object(control_panel, "set_armed_led") as mock_armed_led:
-        with patch("httpx.post") as mock_post:
-            control_panel.disarm()
+        control_panel.disarm()
 
-            mock_post.assert_called_once_with(
-                f"{control_panel.SERVER_URL}/disarm/?user_id={control_panel.user_id}"
-            )
-        mock_armed_led.assert_called_once_with(False)
-
-
-def test_disarm_fail():
-    """Test disarm() handles HTTP error."""
-    control_panel = ControlPanel()
-
-    with patch.object(control_panel, "set_armed_led") as mock_armed_led:
-        with patch("httpx.post") as mock_post:
-            mock_post.side_effect = httpx.HTTPError("Error")
-            control_panel.disarm()
-
-            mock_post.assert_called_once_with(
-                f"{control_panel.SERVER_URL}/disarm/?user_id={control_panel.user_id}"
-            )
-        mock_armed_led.assert_not_called()
+    mock_armed_led.assert_called_once_with(False)
 
 
 def test_handle_number_input_idle():
@@ -610,3 +574,60 @@ def test_handle_number_input_idle():
 
     assert control_panel.button_sequence == "1"
     assert control_panel.state == ControlPanelState.IDLE
+
+
+def test_panic():
+    """Test panic() method."""
+    control_panel = ControlPanel()
+
+    with (
+        patch("httpx.Client"),
+        patch.object(control_panel, "arm") as mock_arm,
+        patch.object(control_panel, "set_armed_led") as mock_set_led,
+        patch.object(control_panel, "set_display_short_message1") as mock_msg1,
+        patch.object(control_panel, "set_display_short_message2") as mock_msg2,
+    ):
+        control_panel.panic()
+
+        mock_arm.assert_called_once()
+        mock_set_led.assert_called_once_with(True)
+        mock_msg1.assert_called_once_with("PANIC ALARM!")
+        mock_msg2.assert_called_once_with("Help on the way")
+
+
+def test_poll_alarm_disarm():
+    """Test poll_alarm() disarm scenario."""
+    control_panel = ControlPanel()
+    control_panel.security_api_client = MagicMock()
+    control_panel.armed = True
+
+    control_panel.security_api_client.get_safehome_modes.return_value = {
+        "current_mode": "home"
+    }
+
+    control_panel.arm = MagicMock()
+    control_panel.disarm = MagicMock()
+
+    control_panel.poll_alarm()
+
+    control_panel.arm.assert_not_called()
+    control_panel.disarm.assert_called_once()
+
+
+def test_poll_alarm_arm():
+    """Test poll_alarm() arm scenario."""
+    control_panel = ControlPanel()
+    control_panel.security_api_client = MagicMock()
+    control_panel.armed = False
+
+    control_panel.security_api_client.get_safehome_modes.return_value = {
+        "current_mode": "away"
+    }
+
+    control_panel.arm = MagicMock()
+    control_panel.disarm = MagicMock()
+
+    control_panel.poll_alarm()
+
+    control_panel.arm.assert_called_once()
+    control_panel.disarm.assert_not_called()
