@@ -197,7 +197,7 @@ class TestCameraPassword:
     def test_set_camera_password(self):
         """Test setting camera password."""
         response = client.put(
-            "/surveillance/cameras/1/password", json={"password": "test123"}
+            "/surveillance/cameras/1/password", json={"new_password": "test123"}
         )
         assert response.status_code == 200
 
@@ -205,10 +205,56 @@ class TestCameraPassword:
         assert data["camera_id"] == 1
         assert data["has_password"]
 
+    def test_change_camera_password(self):
+        """Test changing camera password with old password verification."""
+        # First set a password
+        client.put(
+            "/surveillance/cameras/1/password", json={"new_password": "oldpass123"}
+        )
+
+        # Change password with correct old password
+        response = client.put(
+            "/surveillance/cameras/1/password",
+            json={"old_password": "oldpass123", "new_password": "newpass123"},
+        )
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["camera_id"] == 1
+        assert data["has_password"]
+
+    def test_change_camera_password_without_old_password(self):
+        """Test changing password without providing old password."""
+        # First set a password
+        client.put(
+            "/surveillance/cameras/1/password", json={"new_password": "oldpass123"}
+        )
+
+        # Try to change without old password - should fail
+        response = client.put(
+            "/surveillance/cameras/1/password",
+            json={"new_password": "newpass123"},
+        )
+        assert response.status_code == 401
+
+    def test_change_camera_password_incorrect_old_password(self):
+        """Test changing password with incorrect old password."""
+        # First set a password
+        client.put(
+            "/surveillance/cameras/1/password", json={"new_password": "oldpass123"}
+        )
+
+        # Try to change with wrong old password - should fail
+        response = client.put(
+            "/surveillance/cameras/1/password",
+            json={"old_password": "wrong", "new_password": "newpass123"},
+        )
+        assert response.status_code == 401
+
     def test_delete_camera_password(self):
         """Test deleting camera password."""
         # First set a password
-        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+        client.put("/surveillance/cameras/1/password", json={"new_password": "test123"})
 
         # Delete password with correct password
         response = client.delete(
@@ -223,7 +269,7 @@ class TestCameraPassword:
     def test_delete_camera_password_without_password(self):
         """Test deleting camera password without providing password."""
         # First set a password
-        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+        client.put("/surveillance/cameras/1/password", json={"new_password": "test123"})
 
         # Try to delete without password - should fail
         response = client.delete("/surveillance/cameras/1/password")
@@ -232,7 +278,7 @@ class TestCameraPassword:
     def test_delete_camera_password_incorrect_password(self):
         """Test deleting camera password with incorrect password."""
         # First set a password
-        client.put("/surveillance/cameras/1/password", json={"password": "test123"})
+        client.put("/surveillance/cameras/1/password", json={"new_password": "test123"})
 
         # Try to delete with wrong password - should fail
         response = client.delete(

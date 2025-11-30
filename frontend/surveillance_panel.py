@@ -600,32 +600,72 @@ class SurveillancePanel(ttk.Frame):
         if cam_id not in self.cameras:
             return
 
-        password = simpledialog.askstring(
-            "Set Camera Password",
-            f"Enter password for {self.cameras[cam_id]['name']}:",
+        camera = self.cameras[cam_id]
+        old_password = None
+
+        # If camera already has a password, verify old password first
+        if camera["has_password"]:
+            old_password = simpledialog.askstring(
+                "Verify Old Password",
+                f"Enter current password for {camera['name']}:",
+                show="*",
+            )
+            if not old_password:
+                return
+
+        # Get new password
+        new_password = simpledialog.askstring(
+            "Set New Password",
+            f"Enter new password for {camera['name']}:",
             show="*",
         )
-        if password:
-            try:
-                self.api_client.set_camera_password(cam_id, password)
-                self.load_cameras()
-                messagebox.showinfo("Success", "Camera password set")
-            except Exception as e:
-                error_message = str(e)
-                if "404" in error_message:
-                    messagebox.showerror("Error", "Camera not found")
-                elif (
-                    "Connection" in error_message or "refused" in error_message.lower()
-                ):
+        if not new_password:
+            return
+
+        # Re-enter new password for confirmation
+        confirm_password = simpledialog.askstring(
+            "Confirm New Password",
+            f"Re-enter new password for {camera['name']}:",
+            show="*",
+        )
+        if not confirm_password:
+            return
+
+        # Verify passwords match
+        if new_password != confirm_password:
+            messagebox.showerror("Error", "Passwords do not match. Please try again.")
+            return
+
+        try:
+            self.api_client.set_camera_password(cam_id, new_password, old_password)
+            self.load_cameras()
+            # Clear cached password if it was stored
+            if cam_id in self.camera_passwords:
+                del self.camera_passwords[cam_id]
+            messagebox.showinfo("Success", "Camera password set")
+        except Exception as e:
+            error_message = str(e)
+            if "401" in error_message:
+                if "Old password required" in error_message:
                     messagebox.showerror(
-                        "Error",
-                        "Cannot connect to backend server. "
-                        "Please ensure the backend is running.",
+                        "Error", "Old password required to change password"
                     )
+                elif "Incorrect old password" in error_message:
+                    messagebox.showerror("Error", "Incorrect old password")
                 else:
-                    messagebox.showerror(
-                        "Error", f"Failed to set password: {error_message}"
-                    )
+                    messagebox.showerror("Error", "Authentication failed")
+            elif "404" in error_message:
+                messagebox.showerror("Error", "Camera not found")
+            elif "Connection" in error_message or "refused" in error_message.lower():
+                messagebox.showerror(
+                    "Error",
+                    "Cannot connect to backend server. "
+                    "Please ensure the backend is running.",
+                )
+            else:
+                messagebox.showerror(
+                    "Error", f"Failed to set password: {error_message}"
+                )
 
     def delete_camera_password(self):
         """Delete password for the selected camera."""

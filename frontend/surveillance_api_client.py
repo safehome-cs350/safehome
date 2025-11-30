@@ -86,12 +86,15 @@ class SurveillanceAPIClient:
             error_detail = response.json().get("detail", "PTZ control failed")
             raise requests.HTTPError(f"{response.status_code}: {error_detail}")
 
-    def set_camera_password(self, camera_id: int, password: str) -> dict:
+    def set_camera_password(
+        self, camera_id: int, new_password: str, old_password: str | None = None
+    ) -> dict:
         """Set password for a camera.
 
         Args:
             camera_id: Camera identifier
-            password: Password to set
+            new_password: New password to set
+            old_password: Old password (required if camera already has a password)
 
         Returns:
             Camera password status
@@ -100,7 +103,9 @@ class SurveillanceAPIClient:
             requests.HTTPException: If request fails
         """
         url = f"{self.base_url}/surveillance/cameras/{camera_id}/password"
-        payload = {"password": password}
+        payload = {"new_password": new_password}
+        if old_password is not None:
+            payload["old_password"] = old_password
         response = requests.put(url, json=payload)
         if response.status_code == 200:
             return response.json()
