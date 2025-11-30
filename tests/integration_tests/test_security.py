@@ -271,3 +271,13 @@ def test_uc_2i(tk_root):
         tk_root.update()
 
     assert security_panel.current_mode == "home"
+
+
+def test_uc_2j(tk_root):
+    """Test for UC2.j. View intrusion log."""
+    pass
+
+
+def test_uc_2k(tk_root):
+    """Test for UC2.k. Call monitoring service through control panel."""
+    pass
