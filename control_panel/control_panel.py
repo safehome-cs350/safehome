@@ -229,18 +229,34 @@ class ControlPanel(DeviceControlPanelAbstract):
 
     def panic(self):
         """Trigger panic alarm."""
-        self.set_armed_led(True)
-        self.set_display_short_message1("PANIC ALARM!")
-        self.set_display_short_message2("Help on the way")
+        self.arm()
+        url = f"{self.SERVER_URL}/panic-call/"
+        payload = {
+            "user_id": self.user_id,
+            "location": "home",
+        }
+        try:
+            with httpx.Client(timeout=5) as client:
+                response = client.post(url, json=payload)
+                response.raise_for_status()
+            self.set_armed_led(True)
+            self.set_display_short_message1("PANIC ALARM!")
+            self.set_display_short_message2("Help on the way")
+        except httpx.HTTPStatusError:
+            return
+        except httpx.RequestError:
+            return
 
     def poll_alarm(self):
         """Poll alarm from server."""
         try:
             response = self.security_api_client.get_safehome_modes(self.user_id)
             if response.get("current_mode") == "home":
-                self.disarm()
+                if self.armed:
+                    self.disarm()
             else:
-                self.arm()
+                if not self.armed:
+                    self.arm()
         except requests.RequestException:
             return
 
@@ -405,6 +421,7 @@ class ControlPanel(DeviceControlPanelAbstract):
 
     def button_sharp(self):
         """Handle button # press."""
+        self.disarm()
         if self.state == ControlPanelState.LOCKED:
             return
         # Reset sequence
@@ -412,7 +429,7 @@ class ControlPanel(DeviceControlPanelAbstract):
         self.state = ControlPanelState.IDLE
         self.set_armed_led(False)
         self.set_display_away(False)
-        self.set_display_stay(False)
+        self.set_display_stay(True)
         self.set_display_not_ready(False)
         self.set_display_short_message1("System Ready")
         self.set_display_short_message2("Enter Code")
