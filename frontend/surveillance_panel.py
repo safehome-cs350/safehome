@@ -646,6 +646,15 @@ class SurveillancePanel(ttk.Frame):
             messagebox.showinfo("Info", "Camera has no password set")
             return
 
+        # Prompt for password verification
+        password = simpledialog.askstring(
+            "Verify Password",
+            f"Enter password for {self.cameras[cam_id]['name']} to delete:",
+            show="*",
+        )
+        if not password:
+            return
+
         result = messagebox.askyesno(
             "Delete Password",
             f"Are you sure you want to delete the password for "
@@ -653,12 +662,24 @@ class SurveillancePanel(ttk.Frame):
         )
         if result:
             try:
-                self.api_client.delete_camera_password(cam_id)
+                self.api_client.delete_camera_password(cam_id, password)
                 self.load_cameras()
+                # Clear cached password if it was stored
+                if cam_id in self.camera_passwords:
+                    del self.camera_passwords[cam_id]
                 messagebox.showinfo("Success", "Camera password deleted")
             except Exception as e:
                 error_message = str(e)
-                if "404" in error_message:
+                if "401" in error_message:
+                    if "Password required" in error_message:
+                        messagebox.showerror(
+                            "Error", "Password required to delete camera password"
+                        )
+                    elif "Incorrect password" in error_message:
+                        messagebox.showerror("Error", "Incorrect password")
+                    else:
+                        messagebox.showerror("Error", "Authentication failed")
+                elif "404" in error_message:
                     messagebox.showerror("Error", "Camera not found")
                 elif (
                     "Connection" in error_message or "refused" in error_message.lower()

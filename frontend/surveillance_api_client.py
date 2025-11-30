@@ -108,11 +108,12 @@ class SurveillanceAPIClient:
             error_detail = response.json().get("detail", "Failed to set password")
             raise requests.HTTPError(f"{response.status_code}: {error_detail}")
 
-    def delete_camera_password(self, camera_id: int) -> dict:
+    def delete_camera_password(self, camera_id: int, password: str) -> dict:
         """Delete password for a camera.
 
         Args:
             camera_id: Camera identifier
+            password: Password to verify before deletion
 
         Returns:
             Camera password status
@@ -121,7 +122,8 @@ class SurveillanceAPIClient:
             requests.HTTPException: If request fails
         """
         url = f"{self.base_url}/surveillance/cameras/{camera_id}/password"
-        response = requests.delete(url)
+        params = {"password": password}
+        response = requests.delete(url, params=params)
         if response.status_code == 200:
             return response.json()
         else:

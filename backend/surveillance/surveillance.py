@@ -442,6 +442,12 @@ async def set_camera_password(camera_id: int, req: CameraPasswordRequest):
                 "application/json": {"example": {"camera_id": 1, "has_password": False}}
             },
         },
+        401: {
+            "description": "Password required or incorrect",
+            "content": {
+                "application/json": {"example": {"detail": "Password required"}}
+            },
+        },
         404: {
             "description": "Camera not found",
             "content": {
@@ -450,11 +456,24 @@ async def set_camera_password(camera_id: int, req: CameraPasswordRequest):
         },
     },
 )
-async def delete_camera_password(camera_id: int):
-    """Delete password for a camera."""
+async def delete_camera_password(camera_id: int, password: str | None = None):
+    """Delete password for a camera.
+
+    Args:
+        camera_id: Camera identifier
+        password: Password to verify before deletion
+    """
     camera_info = CameraDB.get_camera(camera_id)
     if not camera_info:
         raise HTTPException(status_code=404, detail="Camera not found")
+
+    if camera_info.has_password:
+        if not password:
+            raise HTTPException(
+                status_code=401, detail="Password required to delete camera password"
+            )
+        if camera_info.password != password:
+            raise HTTPException(status_code=401, detail="Incorrect password")
 
     CameraDB.update_camera(camera_id, has_password=False, password=None)
     return CameraPasswordStatus(camera_id=camera_id, has_password=False)
