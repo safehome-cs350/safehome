@@ -4,7 +4,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 from .api_client import APIClient
 from .sensor_panel import SensorPanel
@@ -320,16 +320,23 @@ class SurveillancePanel(ttk.Frame):
                     image_path = self.project_root / filename
 
                     if image_path.exists():
-                        img = Image.open(str(image_path))
+                        source_img = Image.open(str(image_path))
+                        view_img = self._generate_camera_view(
+                            source_img, self.current_pan, self.current_zoom
+                        )
+
                         canvas_width = self.camera_canvas.winfo_width()
                         canvas_height = self.camera_canvas.winfo_height()
                         if canvas_width > 1 and canvas_height > 1:
-                            img = img.resize(
+                            view_img = view_img.resize(
                                 (canvas_width, canvas_height), Image.Resampling.LANCZOS
                             )
                         else:
-                            img = img.resize((640, 480), Image.Resampling.LANCZOS)
-                        self.camera_image = ImageTk.PhotoImage(img)
+                            view_img = view_img.resize(
+                                (640, 480), Image.Resampling.LANCZOS
+                            )
+
+                        self.camera_image = ImageTk.PhotoImage(view_img)
                         self.camera_canvas.create_image(
                             canvas_width // 2 if canvas_width > 1 else 320,
                             canvas_height // 2 if canvas_height > 1 else 240,
@@ -527,6 +534,80 @@ class SurveillancePanel(ttk.Frame):
             else:
                 messagebox.showerror("Error", f"Failed to reset pan: {error_message}")
 
+    def _generate_camera_view(
+        self, source_img: Image.Image, pan: int, zoom: int
+    ) -> Image.Image:
+        """Generate camera view based on pan and zoom values.
+
+        This mimics the logic from DeviceCamera.get_view() to generate
+        a view that reflects the current pan/zoom state.
+
+        Args:
+            source_img: Source camera image
+            pan: Pan position (-5 to 5)
+            zoom: Zoom level (1 to 9)
+
+        Returns:
+            PIL Image with pan/zoom applied
+        """
+        return_size = 500
+        source_size = 200
+
+        view_img = Image.new("RGB", (return_size, return_size), "black")
+
+        if source_img:
+            center_width = source_img.width // 2
+            center_height = source_img.height // 2
+
+            zoomed = source_size * (10 - zoom) // 10
+            panned = pan * source_size // 5
+
+            left = center_width + panned - zoomed
+            top = center_height - zoomed
+            right = center_width + panned + zoomed
+            bottom = center_height + zoomed
+
+            try:
+                cropped = source_img.crop((left, top, right, bottom))
+                resized = cropped.resize(
+                    (return_size, return_size), Image.Resampling.LANCZOS
+                )
+                view_img.paste(resized, (0, 0))
+            except Exception:
+                pass
+
+        draw = ImageDraw.Draw(view_img)
+        try:
+            font = ImageFont.load_default()
+        except Exception:
+            font = None
+
+        view_text = f"zoom x{zoom}, "
+        if pan > 0:
+            view_text += f"right {pan}"
+        elif pan == 0:
+            view_text += "center"
+        else:
+            view_text += f"left {-pan}"
+
+        bbox = draw.textbbox((0, 0), view_text, font=font) if font else (0, 0, 100, 20)
+        w_text = bbox[2] - bbox[0]
+        h_text = bbox[3] - bbox[1]
+
+        r_x = 0
+        r_y = 0
+        draw.rounded_rectangle(
+            [(r_x, r_y), (r_x + w_text + 10, r_y + h_text + 5)],
+            radius=h_text // 2,
+            fill="gray",
+        )
+
+        x_text = r_x + 5
+        y_text = r_y + 2
+        draw.text((x_text, y_text), view_text, fill="cyan", font=font)
+
+        return view_img
+
     def enable_camera(self):
         """Enable the selected camera."""
         selected = self.camera_tree.selection()
@@ -603,7 +684,6 @@ class SurveillancePanel(ttk.Frame):
         camera = self.cameras[cam_id]
         old_password = None
 
-        # If camera already has a password, verify old password first
         if camera["has_password"]:
             old_password = simpledialog.askstring(
                 "Verify Old Password",
@@ -613,7 +693,6 @@ class SurveillancePanel(ttk.Frame):
             if not old_password:
                 return
 
-        # Get new password
         new_password = simpledialog.askstring(
             "Set New Password",
             f"Enter new password for {camera['name']}:",
@@ -622,7 +701,6 @@ class SurveillancePanel(ttk.Frame):
         if not new_password:
             return
 
-        # Re-enter new password for confirmation
         confirm_password = simpledialog.askstring(
             "Confirm New Password",
             f"Re-enter new password for {camera['name']}:",
@@ -631,7 +709,6 @@ class SurveillancePanel(ttk.Frame):
         if not confirm_password:
             return
 
-        # Verify passwords match
         if new_password != confirm_password:
             messagebox.showerror("Error", "Passwords do not match. Please try again.")
             return
@@ -639,7 +716,6 @@ class SurveillancePanel(ttk.Frame):
         try:
             self.api_client.set_camera_password(cam_id, new_password, old_password)
             self.load_cameras()
-            # Clear cached password if it was stored
             if cam_id in self.camera_passwords:
                 del self.camera_passwords[cam_id]
             messagebox.showinfo("Success", "Camera password set")
