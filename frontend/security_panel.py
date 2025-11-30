@@ -24,9 +24,11 @@ class SecurityPanel(ttk.Frame):
         self.available_devices = []  # List of device dicts with id and type
         self.intrusion_log = []
         self._loading_mode = False  # Flag to prevent saving during load
+        self._refresh_job = None  # Track scheduled refresh job
 
         self.setup_ui()
         self.load_data()
+        self.start_refresh()
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -285,6 +287,23 @@ class SecurityPanel(ttk.Frame):
             else:
                 # Silently fail for log loading
                 pass
+
+    def start_refresh(self):
+        """Start periodic data refresh every 0.5 seconds."""
+        self.refresh_data()
+
+    def refresh_data(self):
+        """Refresh data and schedule next refresh."""
+        if self.app.current_user:
+            self.load_data()
+        # Schedule next refresh in 500ms (0.5 seconds)
+        self._refresh_job = self.after(500, self.refresh_data)
+
+    def stop_refresh(self):
+        """Stop periodic data refresh."""
+        if self._refresh_job:
+            self.after_cancel(self._refresh_job)
+            self._refresh_job = None
 
     def arm_system(self):
         """Arm the security system."""
