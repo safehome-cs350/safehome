@@ -207,10 +207,14 @@ class TestCameraPassword:
 
     def test_change_camera_password(self):
         """Test changing camera password with old password verification."""
-        # First set a password
-        client.put(
+        # Reset camera 1 to have no password
+        CameraDB.update_camera(1, has_password=False, password=None)
+
+        # Set initial password
+        response = client.put(
             "/surveillance/cameras/1/password", json={"new_password": "oldpass123"}
         )
+        assert response.status_code == 200
 
         # Change password with correct old password
         response = client.put(
@@ -253,8 +257,14 @@ class TestCameraPassword:
 
     def test_delete_camera_password(self):
         """Test deleting camera password."""
+        # Reset camera 1 to have no password
+        CameraDB.update_camera(1, has_password=False, password=None)
+
         # First set a password
-        client.put("/surveillance/cameras/1/password", json={"new_password": "test123"})
+        response = client.put(
+            "/surveillance/cameras/1/password", json={"new_password": "test123"}
+        )
+        assert response.status_code == 200
 
         # Delete password with correct password
         response = client.delete(
@@ -557,7 +567,7 @@ class TestErrorHandling:
         # Test set password
         response = client.put(
             f"/surveillance/cameras/{non_existent_camera_id}/password",
-            json={"password": "test123"},
+            json={"new_password": "test123"},
         )
         assert response.status_code == 404
         assert "Camera not found" in response.json()["detail"]
