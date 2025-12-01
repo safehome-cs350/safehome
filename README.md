@@ -4,9 +4,10 @@
 
 1. Install Docker
 
-    https://docs.docker.com/engine/install/
+    <https://docs.docker.com/engine/install/>
 
 2. Install dependencies:
+
     ```sh
     pip install -e .
     ```
@@ -16,6 +17,7 @@
 There are **three** main components to run:
 
 1. Server
+
     ```sh
     make backend
     ```
@@ -27,11 +29,15 @@ There are **three** main components to run:
     ```
 
 3. Control Panel
+
     ```sh
     make control-panel
     ```
 
 ## Testing
+
+You can check the coverage report along with the unit tests.
+If you want to inspect detailed coverage results, run the unit tests first and then open the HTML report located in the htmlcov/ directory.
 
 ```sh
 # Backend unit tests
@@ -48,12 +54,14 @@ make integration-test
 ```
 
 ## How to use our safehome implementation through concrete examples of use case scenarios
+
 Please refer to the integration test code in `/tests/integration_tests`.
 There, you can see how every use case is executed end-to-end and how the backend, frontend, and control panel interact with each other during the full system workflow.
 
 To illustrate the “Log onto the system through the control panel” use case, consider the following concrete example.
 
 When the user enters a password on the control panel, the control panel sends a login request to the backend server:
+
 ```python
 url = f"{self.SERVER_URL}/control-panel-login/"
 payload = {
@@ -81,9 +89,11 @@ except httpx.RequestError:
     self.set_display_short_message1("Server Error")
     self.set_display_short_message2("Enter Code")
 ```
+
 This snippet shows that the control panel constructs an HTTP POST request containing the user ID and the password entered via the number button. The request is then sent to the backend server.
 
 On the backend side, the following endpoint handles this login request:
+
 ```python
 @router.post(
     "/control-panel-login/",
@@ -112,12 +122,14 @@ def control_panel_login(request: ControlPanelLoginRequest):
     else:
         raise HTTPException(status_code=401, detail="Password incorrect")
 ```
+
 The backend looks up the user, verifies the password, and returns either "master" or "guest" depending on which password matches. If the credentials are invalid, the server returns HTTP 401, triggering the Control Panel’s error-handling logic.
 
 This demonstrates the complete flow of the “Log onto the system through control panel” use case:
 user input → control panel request → backend authentication → control panel state update.
 
 ## Contact
-- Sihun Chae: csh1943@kaist.ac.kr
-- Wooyoung Choi: wooyoung.choi@kaist.ac.kr
-- Donggeun Kim: kdg01723@kaist.ac.kr
+
+- Sihun Chae: <csh1943@kaist.ac.kr>
+- Wooyoung Choi: <wooyoung.choi@kaist.ac.kr>
+- Donggeun Kim: <kdg01723@kaist.ac.kr>
