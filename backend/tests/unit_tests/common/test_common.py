@@ -237,7 +237,7 @@ def test_config_invalid_user():
 
 
 def test_config_delay_time_too_small():
-    """Test config with delay time less than 300."""
+    """Test config with delay time less than 0."""
     response = client.post(
         "/config/",
         json={
@@ -246,12 +246,12 @@ def test_config_delay_time_too_small():
             "password2": None,
             "master_password": None,
             "guest_password": None,
-            "delay_time": 200,
+            "delay_time": -1,
             "phone_number": None,
         },
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Delay time must be at least 300"
+    assert response.json()["detail"] == "Delay time must be at least 0"
 
 
 def test_power_on_success():
