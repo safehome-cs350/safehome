@@ -107,58 +107,6 @@ class ConfigurationPanel(ttk.Frame):
             row=row, column=1, pady=5, padx=5, sticky=tk.W
         )
 
-        control_frame = ttk.LabelFrame(main_frame, text="System Control", padding=15)
-        control_frame.pack(fill=tk.X, pady=10)
-
-        system_control_frame = ttk.Frame(control_frame)
-        system_control_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Label(system_control_frame, text="System Power:").pack(side=tk.LEFT, padx=5)
-        self.system_power_var = tk.StringVar(value="ON")
-        power_status_label = ttk.Label(
-            system_control_frame,
-            textvariable=self.system_power_var,
-            font=("Arial", 10, "bold"),
-        )
-        power_status_label.pack(side=tk.LEFT, padx=10)
-
-        turn_on_btn = ttk.Button(
-            system_control_frame,
-            text="Turn On",
-            command=self.turn_system_on,
-            width=12,
-        )
-        turn_on_btn.pack(side=tk.LEFT, padx=5)
-        turn_off_btn = ttk.Button(
-            system_control_frame,
-            text="Turn Off",
-            command=self.turn_system_off,
-            width=12,
-        )
-        turn_off_btn.pack(side=tk.LEFT, padx=5)
-
-        reset_frame = ttk.Frame(control_frame)
-        reset_frame.pack(fill=tk.X, pady=10)
-
-        ttk.Label(
-            reset_frame,
-            text="Reset System:",
-            font=("Arial", 10),
-        ).pack(side=tk.LEFT, padx=5)
-        ttk.Label(
-            reset_frame,
-            text="This will reset all system settings to defaults",
-            foreground="gray",
-        ).pack(side=tk.LEFT, padx=5)
-
-        reset_btn = ttk.Button(
-            reset_frame,
-            text="Reset System",
-            command=self.reset_system,
-            width=15,
-        )
-        reset_btn.pack(side=tk.RIGHT, padx=5)
-
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
 

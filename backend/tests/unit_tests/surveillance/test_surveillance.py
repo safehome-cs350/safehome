@@ -51,7 +51,7 @@ class TestCameraView:
 
         data = response.json()
         assert data["camera_id"] == 1
-        assert data["name"] == "거실 카메라"
+        assert data["name"] == "Living Room Camera"
         assert data["is_enabled"]
         assert data["is_online"]
         assert "image_url" in data
