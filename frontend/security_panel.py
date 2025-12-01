@@ -37,6 +37,12 @@ class SecurityPanel(ttk.Frame):
 
     def setup_ui(self):
         """Set up the user interface."""
+        try:
+            style = ttk.Style()
+            style.configure("Active.TButton", background="#4CAF50", foreground="white")
+        except Exception:
+            pass
+
         left_frame = ttk.LabelFrame(self, text="System Control", padding=10)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
@@ -953,8 +959,25 @@ class SecurityPanel(ttk.Frame):
         for entry in self.intrusion_log:
             self.log_tree.insert("", tk.END, values=entry)
 
+    def update_mode_button_states(self):
+        """Update the visual state of mode buttons to show active mode."""
+        if not self.mode_buttons or not self.current_mode:
+            return
+
+        for mode_value, button in self.mode_buttons.items():
+            if mode_value == self.current_mode:
+                # Active mode: use a highlighted style
+                try:
+                    button.config(style="Active.TButton")
+                except tk.TclError:
+                    # Fallback if style doesn't exist on this platform
+                    button.config(style="TButton", state="normal")
+            else:
+                # Inactive mode: use default style
+                button.config(style="TButton")
+
     def update_current_mode_display(self):
-        """Update the current mode label display."""
+        """Update the current mode label display and button states."""
         if self.current_mode:
             mode_display = {
                 "away": "Away",
@@ -963,6 +986,9 @@ class SecurityPanel(ttk.Frame):
                 "overnight_travel": "Overnight Travel",
             }.get(self.current_mode, self.current_mode.title())
             self.current_mode_label.config(text=mode_display)
+
+            # Update button visual states to show which mode is active
+            self.update_mode_button_states()
 
     def on_mode_button_click(self, new_mode):
         """Handle mode button click - trigger mode change with reconfirmation."""
