@@ -1,10 +1,11 @@
 """Security panel for system security management."""
 
 import tkinter as tk
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from tkinter import messagebox, ttk
 
 from .api_client import APIClient
+from .notification_dialog import NotificationDialog
 from .reconfirm_dialog import ReconfirmDialog
 from .safety_zone_dialog import SafetyZoneDialog
 
@@ -25,6 +26,10 @@ class SecurityPanel(ttk.Frame):
         self.intrusion_log = []
         self._loading_mode = False  # Flag to prevent saving during load
         self._refresh_job = None  # Track scheduled refresh job
+        self._shown_event_ids = set()  # Track event IDs that have already shown dialogs
+        self._scheduled_dialogs = {}  # Track scheduled dialog jobs by event_id
+        # Korea Standard Time (KST) is UTC+9
+        self.kst = timezone(timedelta(hours=9))
 
         self.setup_ui()
         self.load_data()
@@ -249,7 +254,7 @@ class SecurityPanel(ttk.Frame):
                 )
 
     def load_intrusion_log(self):
-        """Load intrusion log from API."""
+        """Load intrusion log from API and schedule notification dialogs."""
         if not self.app.current_user:
             return
 
@@ -257,9 +262,26 @@ class SecurityPanel(ttk.Frame):
             response = self.api_client.view_intrusion_log(self.app.current_user)
             events = response.get("events", [])
             self.intrusion_log = []
+
+            # Get delay_time from configuration
+            delay_time = 300  # Default delay time
+            try:
+                config = self.api_client.get_config(self.app.current_user)
+                delay_time = config.get("delay_time", 300)
+
+                # Ensure delay_time is an integer
+                if not isinstance(delay_time, int):
+                    delay_time = int(delay_time) if delay_time else 300
+            except Exception:
+                # Use default if config retrieval fails
+                pass
+
             for event in events:
+                event_id = event.get("id")
+                alarm_type = event.get("alarm_type", "").lower()
                 timestamp_str = event.get("timestamp", "")
-                # Parse ISO format timestamp
+
+                # Parse ISO format timestamp and convert to KST
                 try:
                     if "T" in timestamp_str:
                         dt = datetime.fromisoformat(
@@ -267,9 +289,25 @@ class SecurityPanel(ttk.Frame):
                         )
                     else:
                         dt = datetime.fromisoformat(timestamp_str)
+
+                    # Convert to KST
+                    # If timezone-aware, convert to KST
+                    # If naive, assume it's UTC (backend likely uses UTC)
+                    # and convert to KST
+                    if dt.tzinfo is None:
+                        # Assume naive datetime is in UTC, convert to KST
+                        utc = timezone.utc
+                        dt_utc = dt.replace(tzinfo=utc)
+                        dt = dt_utc.astimezone(self.kst)
+                    else:
+                        # Convert to KST
+                        dt = dt.astimezone(self.kst)
+
+                    # Display timestamp in KST
                     timestamp_display = dt.strftime("%Y-%m-%d %H:%M:%S")
                 except Exception:
                     timestamp_display = timestamp_str
+                    dt = datetime.now(self.kst)
 
                 self.intrusion_log.append(
                     (
@@ -279,6 +317,64 @@ class SecurityPanel(ttk.Frame):
                         event.get("description", ""),
                     )
                 )
+
+                # Check if this event needs a dialog notification
+                # Only for PANIC and sensor events (DOOR_WINDOW_OPEN, INTRUSION)
+                if event_id and event_id not in self._shown_event_ids:
+                    # Check if dialog is already scheduled for this event
+                    if event_id not in self._scheduled_dialogs:
+                        # Panic events always show dialog
+                        if alarm_type == "panic":
+                            should_show = True
+                        # Sensor events only show if conditions are met
+                        elif alarm_type in ("door_window_open", "intrusion", "detect"):
+                            should_show = self._should_show_sensor_dialog(
+                                event, alarm_type
+                            )
+                        else:
+                            # Other event types don't show dialogs
+                            should_show = False
+
+                        if should_show:
+                            # Calculate delay: delay_time seconds after event timestamp
+                            event_time = dt
+                            current_time = datetime.now(self.kst)
+                            elapsed_seconds = (
+                                current_time - event_time
+                            ).total_seconds()
+
+                            # Ensure elapsed_seconds is non-negative
+                            if elapsed_seconds < 0:
+                                elapsed_seconds = 0
+
+                            # Only show dialog when delay_time has elapsed
+                            # Do not show if too much time has passed
+                            # (e.g., more than delay_time * 2 to avoid
+                            # showing very old events)
+                            max_window = delay_time * 2
+
+                            if elapsed_seconds >= delay_time:
+                                # Delay has elapsed, check if within window
+                                if elapsed_seconds <= max_window:
+                                    # Show dialog - delay elapsed, within window
+                                    self._show_notification_dialog(
+                                        event_id, alarm_type, event
+                                    )
+                                # If elapsed_seconds > max_window, don't show
+                                # (event is too old)
+                            else:
+                                # Delay has not elapsed yet,
+                                # schedule for remaining delay
+                                remaining_delay_seconds = delay_time - elapsed_seconds
+                                # Ensure we schedule at least 1 second delay
+                                if remaining_delay_seconds > 0:
+                                    self._schedule_notification_dialog(
+                                        event_id,
+                                        alarm_type,
+                                        event,
+                                        remaining_delay_seconds,
+                                    )
+
             self.refresh_log_display()
         except Exception as e:
             error_message = str(e)
@@ -295,7 +391,18 @@ class SecurityPanel(ttk.Frame):
     def refresh_data(self):
         """Refresh data and schedule next refresh."""
         if self.app.current_user:
-            self.load_data()
+            # self.load_data()
+            # Load SafeHome modes
+            modes_response = self.api_client.get_safehome_modes(self.app.current_user)
+            self.current_mode = modes_response.get("current_mode", "away")
+            # Set flag to prevent saving during load
+            self._loading_mode = True
+            self.mode_var.set(self.current_mode)
+            self.update_current_mode_display()
+            self._loading_mode = False
+
+            # Load intrusion log
+            self.load_intrusion_log()
         # Schedule next refresh in 500ms (0.5 seconds)
         self._refresh_job = self.after(500, self.refresh_data)
 
@@ -304,6 +411,164 @@ class SecurityPanel(ttk.Frame):
         if self._refresh_job:
             self.after_cancel(self._refresh_job)
             self._refresh_job = None
+
+        # Cancel all scheduled dialogs
+        for _, job_id in self._scheduled_dialogs.items():
+            self.after_cancel(job_id)
+        self._scheduled_dialogs.clear()
+
+    def _schedule_notification_dialog(self, event_id, alarm_type, event, delay_seconds):
+        """Schedule a notification dialog to appear after delay.
+
+        Args:
+            event_id: Event ID
+            alarm_type: Alarm type (lowercase)
+            event: Event data dictionary
+            delay_seconds: Delay in seconds
+        """
+
+        def show_dialog():
+            if event_id not in self._shown_event_ids:
+                # Re-check if dialog should be shown (for sensor events)
+                # Panic events always show, sensor events need re-check
+                if alarm_type == "panic":
+                    should_show = True
+                elif alarm_type in ("door_window_open", "intrusion", "detect"):
+                    should_show = self._should_show_sensor_dialog(event, alarm_type)
+                else:
+                    should_show = False
+
+                if should_show:
+                    self._show_notification_dialog(event_id, alarm_type, event)
+                if event_id in self._scheduled_dialogs:
+                    del self._scheduled_dialogs[event_id]
+
+        # Convert seconds to milliseconds for tkinter's after() method
+        delay_ms = int(delay_seconds * 1000)
+        job_id = self.after(delay_ms, show_dialog)
+        self._scheduled_dialogs[event_id] = job_id
+
+    def _should_show_sensor_dialog(self, event, alarm_type):
+        """Check if sensor dialog should be shown.
+
+        Sensor dialogs should only appear for sensors that:
+        - Belong to a safety zone
+        - The safety zone is armed
+        - The sensor itself is armed
+        - The sensor is in open/detect state
+
+        Args:
+            event: Event data dictionary
+            alarm_type: Alarm type (lowercase)
+
+        Returns:
+            bool: True if dialog should be shown, False otherwise
+        """
+        device_id = event.get("device_id")
+        if not device_id:
+            return False
+
+        # Check if device belongs to any armed safety zone
+        belongs_to_armed_zone = False
+        for zone_data in self.safety_zones.values():
+            device_ids = zone_data.get("device_ids", [])
+            is_armed = zone_data.get("is_armed", False)
+            if device_id in device_ids and is_armed:
+                belongs_to_armed_zone = True
+                break
+
+        if not belongs_to_armed_zone:
+            return False
+
+        # Check if sensor is in open/detect state AND sensor is armed
+        try:
+            # Determine sensor type from alarm type
+            if alarm_type == "door_window_open":
+                sensor_type = "windoor"
+            elif alarm_type in ("intrusion", "detect"):
+                sensor_type = "motion"
+            else:
+                return False
+
+            # Get current sensor status
+            sensor_status = self.api_client.get_sensor_status(sensor_type, device_id)
+
+            # Check if sensor is armed
+            is_sensor_armed = sensor_status.get("is_armed", False)
+            if not is_sensor_armed:
+                return False
+
+            # Check if sensor is in open/detect state
+            if sensor_type == "windoor":
+                is_opened = sensor_status.get("is_opened", False)
+                return is_opened
+            elif sensor_type == "motion":
+                is_triggered = sensor_status.get("is_triggered", False)
+                return is_triggered
+        except Exception:
+            # If we can't get sensor status, don't show dialog
+            return False
+
+        return False
+
+    def _show_notification_dialog(self, event_id, alarm_type, event):
+        """Show a notification dialog for an event.
+
+        Args:
+            event_id: Event ID
+            alarm_type: Alarm type (lowercase)
+            event: Event data dictionary
+        """
+        # Mark this event as shown
+        self._shown_event_ids.add(event_id)
+
+        # Determine dialog title and message based on alarm type
+        if alarm_type == "panic":
+            title = "🚨 PANIC ALARM"
+            description = event.get("description", "Panic button pressed by homeowner")
+            message = (
+                f"Panic alarm activated!\n\n"
+                f"Location: {event.get('location', 'Unknown')}\n"
+                f"Description: {description}\n"
+                f"Timestamp: {event.get('timestamp', 'Unknown')}\n\n"
+                f"Monitoring service has been notified."
+            )
+        elif alarm_type == "door_window_open":
+            title = "⚠️ SENSOR ALERT"
+            message = (
+                f"Door/Window Sensor Opened!\n\n"
+                f"Location: {event.get('location', 'Unknown')}\n"
+                f"Description: {event.get('description', 'Sensor detected opening')}\n"
+                f"Timestamp: {event.get('timestamp', 'Unknown')}"
+            )
+        elif alarm_type == "intrusion":
+            title = "🚨 INTRUSION DETECTED"
+            message = (
+                f"Motion Sensor Triggered!\n\n"
+                f"Location: {event.get('location', 'Unknown')}\n"
+                f"Description: {event.get('description', 'Motion detected')}\n"
+                f"Timestamp: {event.get('timestamp', 'Unknown')}"
+            )
+        elif alarm_type == "detect":
+            title = "🚨 MOTION DETECTED"
+            message = (
+                f"Motion Sensor Detected!\n\n"
+                f"Location: {event.get('location', 'Unknown')}\n"
+                f"Description: {event.get('description', 'Motion detected')}\n"
+                f"Timestamp: {event.get('timestamp', 'Unknown')}"
+            )
+        else:
+            # Should not happen, but handle gracefully
+            title = "System Notification"
+            message = (
+                f"Alarm Event: {alarm_type.upper()}\n\n"
+                f"Location: {event.get('location', 'Unknown')}\n"
+                f"Description: {event.get('description', 'Event detected')}\n"
+                f"Timestamp: {event.get('timestamp', 'Unknown')}"
+            )
+
+        # Show the dialog (non-blocking)
+        NotificationDialog(self, title, message)
 
     def arm_system(self):
         """Arm the security system."""

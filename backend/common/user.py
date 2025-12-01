@@ -78,7 +78,7 @@ class UserDB:
             password2="abcdefgh",
             master_password="1234",
             guest_password="5678",
-            delay_time=300,
+            delay_time=20,
             phone_number="01012345678",
             is_powered_on=True,
             address="123 Main St",

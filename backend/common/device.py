@@ -29,6 +29,7 @@ class AlarmType(Enum):
     SENSOR_FAILURE = "sensor_failure"
     PANIC = "panic"
     DOOR_WINDOW_OPEN = "door_window_open"
+    DETECT = "detect"
 
 
 @dataclass

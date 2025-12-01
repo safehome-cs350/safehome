@@ -781,7 +781,7 @@ async def trigger_motion_detector(sensor_id: int):
     # Log the sensor trigger event
     user = get_default_user()
     user.add_alarm_event(
-        alarm_type=AlarmType.INTRUSION,
+        alarm_type=AlarmType.DETECT,
         device_id=sensor_id,
         location=sensor_info.location,
         description=f"Motion sensor {sensor_id} triggered",
