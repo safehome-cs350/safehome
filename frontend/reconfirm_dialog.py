@@ -32,7 +32,9 @@ class ReconfirmDialog(tk.Toplevel):
 
         ttk.Label(
             main_frame,
-            text="Please enter your address or phone number\nto reconfirm your identity:",
+            text=(
+                "Please enter your address or phone number\nto reconfirm your identity:"
+            ),
             justify=tk.LEFT,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 15))
 
