@@ -38,10 +38,8 @@ class SecurityAPIClient:
         """
         url = f"{self.base_url}/reconfirm/"
         payload = {"user_id": user_id}
-        if address is not None:
-            payload["address"] = address
-        if phone_number is not None:
-            payload["phone_number"] = phone_number
+        payload["address"] = address
+        payload["phone_number"] = phone_number
         response = requests.post(url, json=payload)
         if response.status_code == 200:
             return response.json()
