@@ -166,7 +166,7 @@ class CameraListResponse(BaseModel):
                         "cameras": [
                             {
                                 "camera_id": 1,
-                                "name": "거실 카메라",
+                                "name": "Living Room Camera",
                                 "location": "거실",
                                 "is_enabled": True,
                                 "is_online": True,
@@ -221,7 +221,7 @@ async def list_cameras():
                 "application/json": {
                     "example": {
                         "camera_id": 1,
-                        "name": "거실 카메라",
+                        "name": "Living Room Camera",
                         "is_enabled": True,
                         "is_online": True,
                         "stream_url": "https://example.com/stream/cam1.m3u8",

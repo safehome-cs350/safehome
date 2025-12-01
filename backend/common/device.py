@@ -105,7 +105,7 @@ class CameraDB:
     cameras = {
         1: CameraInfo(
             camera_id=1,
-            name="거실 카메라",
+            name="Living Room Camera",
             location="거실",
             is_enabled=True,
             has_password=False,
@@ -114,7 +114,7 @@ class CameraDB:
         ),
         2: CameraInfo(
             camera_id=2,
-            name="현관 카메라",
+            name="Entrance Camera",
             location="현관",
             is_enabled=True,
             has_password=True,
@@ -123,7 +123,7 @@ class CameraDB:
         ),
         3: CameraInfo(
             camera_id=3,
-            name="침실 카메라",
+            name="Bedroom Camera",
             location="침실",
             is_enabled=False,
             has_password=False,
@@ -164,19 +164,29 @@ class SensorDB:
     """Sensor database class."""
 
     motion_sensors = {
-        1: SensorInfo(sensor_id=1, sensor_type="motion", location="메인 모션 센서"),
-        2: SensorInfo(sensor_id=2, sensor_type="motion", location="KIT 센서"),
+        1: SensorInfo(sensor_id=1, sensor_type="motion", location="Main Motion Sensor"),
+        2: SensorInfo(sensor_id=2, sensor_type="motion", location="Kitchen Sensor"),
     }
 
     windoor_sensors = {
-        1: SensorInfo(sensor_id=1, sensor_type="windoor", location="DR 서쪽 창문"),
-        2: SensorInfo(sensor_id=2, sensor_type="windoor", location="DR 동쪽 창문"),
-        3: SensorInfo(sensor_id=3, sensor_type="windoor", location="KIT 창문"),
-        4: SensorInfo(sensor_id=4, sensor_type="windoor", location="LR 북쪽 창문"),
-        5: SensorInfo(sensor_id=5, sensor_type="windoor", location="LR 북동 창문"),
-        6: SensorInfo(sensor_id=6, sensor_type="windoor", location="LR 남동 창문"),
-        7: SensorInfo(sensor_id=1, sensor_type="door", location="정문"),
-        8: SensorInfo(sensor_id=2, sensor_type="door", location="후문"),
+        1: SensorInfo(
+            sensor_id=1, sensor_type="windoor", location="Dining Room West Window"
+        ),
+        2: SensorInfo(
+            sensor_id=2, sensor_type="windoor", location="Dining Room East Window"
+        ),
+        3: SensorInfo(sensor_id=3, sensor_type="windoor", location="Kitchen Window"),
+        4: SensorInfo(
+            sensor_id=4, sensor_type="windoor", location="Living Room North Window"
+        ),
+        5: SensorInfo(
+            sensor_id=5, sensor_type="windoor", location="Living Room Northeast Window"
+        ),
+        6: SensorInfo(
+            sensor_id=6, sensor_type="windoor", location="Living Room Southeast Window"
+        ),
+        7: SensorInfo(sensor_id=1, sensor_type="door", location="Front Door"),
+        8: SensorInfo(sensor_id=2, sensor_type="door", location="Back Door"),
     }
 
     @classmethod
