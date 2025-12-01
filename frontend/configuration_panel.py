@@ -300,8 +300,8 @@ class ConfigurationPanel(ttk.Frame):
 
         try:
             delay_time = int(self.delay_time_var.get())
-            if delay_time < 300:
-                raise ValueError("Delay time must be at least 300 seconds")
+            if delay_time < 0:
+                raise ValueError("Delay time must be at least 0 seconds")
 
             phone_number = self.phone_number_var.get().strip()
             password1 = self.password1_var.get().strip()
@@ -336,8 +336,10 @@ class ConfigurationPanel(ttk.Frame):
             messagebox.showerror("Error", f"Invalid input: {e}")
         except Exception as e:
             error_message = str(e)
-            if "400" in error_message and "300" in error_message:
-                messagebox.showerror("Error", "Delay time must be at least 300 seconds")
+            if "400" in error_message and (
+                "300" in error_message or "0" in error_message
+            ):
+                messagebox.showerror("Error", "Delay time must be at least 0 seconds")
             elif "Connection" in error_message or "refused" in error_message.lower():
                 messagebox.showerror(
                     "Error",

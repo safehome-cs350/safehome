@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import app
+from backend.common.device import CameraDB, SensorDB
 from backend.common.user import Device, DeviceType, User, UserDB
 
 client = TestClient(app)
@@ -24,9 +25,74 @@ def reset_user_db():
             is_powered_on=True,
             address="123 Main St",
             devices=[
-                Device(type=DeviceType.SENSOR, id=1),
-                Device(type=DeviceType.SENSOR, id=2),
-                Device(type=DeviceType.CAMERA, id=3),
+                # All motion sensors from SensorDB (device IDs: 1-2)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=1,
+                    sensor_info=SensorDB.get_motion_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=2,
+                    sensor_info=SensorDB.get_motion_sensor(2),
+                ),
+                # All windoor sensors from SensorDB (device IDs: 3-10)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=3,
+                    sensor_info=SensorDB.get_windoor_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=4,
+                    sensor_info=SensorDB.get_windoor_sensor(2),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=5,
+                    sensor_info=SensorDB.get_windoor_sensor(3),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=6,
+                    sensor_info=SensorDB.get_windoor_sensor(4),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=7,
+                    sensor_info=SensorDB.get_windoor_sensor(5),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=8,
+                    sensor_info=SensorDB.get_windoor_sensor(6),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=9,
+                    sensor_info=SensorDB.get_windoor_sensor(7),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=10,
+                    sensor_info=SensorDB.get_windoor_sensor(8),
+                ),
+                # All cameras from CameraDB (device IDs: 11-13)
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=11,
+                    camera_info=CameraDB.get_camera(1),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=12,
+                    camera_info=CameraDB.get_camera(2),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=13,
+                    camera_info=CameraDB.get_camera(3),
+                ),
             ],
             safety_zones=[],
         )
@@ -171,7 +237,7 @@ def test_config_invalid_user():
 
 
 def test_config_delay_time_too_small():
-    """Test config with delay time less than 300."""
+    """Test config with delay time less than 0."""
     response = client.post(
         "/config/",
         json={
@@ -180,12 +246,12 @@ def test_config_delay_time_too_small():
             "password2": None,
             "master_password": None,
             "guest_password": None,
-            "delay_time": 200,
+            "delay_time": -1,
             "phone_number": None,
         },
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Delay time must be at least 300"
+    assert response.json()["detail"] == "Delay time must be at least 0"
 
 
 def test_power_on_success():

@@ -283,7 +283,7 @@ class TestConfigurationPanel:
         root.destroy()
 
     def test_save_settings_delay_too_small(self):
-        """Test saving settings with delay time less than 300."""
+        """Test saving settings with delay time less than 0."""
         root = tk.Tk()
         root.withdraw()
         app = Mock()
@@ -291,14 +291,14 @@ class TestConfigurationPanel:
         app.update_status = Mock()
 
         panel = ConfigurationPanel(root, app)
-        panel.delay_time_var.set("200")
+        panel.delay_time_var.set("-1")
 
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             panel.save_settings()
 
             mock_messagebox.showerror.assert_called_once()
             call_args = mock_messagebox.showerror.call_args[0]
-            assert "Delay time must be at least 300" in call_args[1]
+            assert "Delay time must be at least 0" in call_args[1]
 
         root.destroy()
 
@@ -338,12 +338,12 @@ class TestConfigurationPanel:
         with patch("frontend.configuration_panel.messagebox") as mock_messagebox:
             with patch.object(panel.api_client, "config") as mock_config:
                 mock_config.side_effect = Exception(
-                    "400: Delay time must be at least 300"
+                    "400: Delay time must be at least 0"
                 )
                 panel.save_settings()
 
                 mock_messagebox.showerror.assert_called_once_with(
-                    "Error", "Delay time must be at least 300 seconds"
+                    "Error", "Delay time must be at least 0 seconds"
                 )
 
         root.destroy()

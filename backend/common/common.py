@@ -113,10 +113,8 @@ def config(request: ConfigRequest):
     if request.guest_password is not None:
         user.guest_password = request.guest_password
     if request.delay_time is not None:
-        if request.delay_time < 300:
-            raise HTTPException(
-                status_code=400, detail="Delay time must be at least 300"
-            )
+        if request.delay_time < 0:
+            raise HTTPException(status_code=400, detail="Delay time must be at least 0")
         user.delay_time = request.delay_time
     if request.phone_number is not None:
         user.phone_number = request.phone_number

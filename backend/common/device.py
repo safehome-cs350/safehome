@@ -29,6 +29,7 @@ class AlarmType(Enum):
     SENSOR_FAILURE = "sensor_failure"
     PANIC = "panic"
     DOOR_WINDOW_OPEN = "door_window_open"
+    DETECT = "detect"
 
 
 @dataclass
@@ -50,6 +51,8 @@ class Device:
 
     type: DeviceType
     id: int
+    sensor_info: "SensorInfo | None" = None  # Sensor data from SensorDB
+    camera_info: "CameraInfo | None" = None  # Camera data from CameraDB
 
 
 @dataclass

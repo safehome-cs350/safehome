@@ -5,11 +5,13 @@ from datetime import datetime
 
 from .device import (
     AlarmEvent,
+    CameraDB,
     Device,
     DeviceType,
     SafeHomeMode,
     SafeHomeModeType,
     SafetyZone,
+    SensorDB,
 )
 
 
@@ -76,25 +78,96 @@ class UserDB:
             password2="abcdefgh",
             master_password="1234",
             guest_password="5678",
-            delay_time=300,
+            delay_time=20,
             phone_number="01012345678",
             is_powered_on=True,
             address="123 Main St",
             devices=[
-                Device(type=DeviceType.SENSOR, id=1),
-                Device(type=DeviceType.SENSOR, id=2),
-                Device(type=DeviceType.CAMERA, id=3),
+                # All motion sensors from SensorDB (device IDs: 1-2)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=1,
+                    sensor_info=SensorDB.get_motion_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=2,
+                    sensor_info=SensorDB.get_motion_sensor(2),
+                ),
+                # All windoor sensors from SensorDB (device IDs: 3-10)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=3,
+                    sensor_info=SensorDB.get_windoor_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=4,
+                    sensor_info=SensorDB.get_windoor_sensor(2),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=5,
+                    sensor_info=SensorDB.get_windoor_sensor(3),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=6,
+                    sensor_info=SensorDB.get_windoor_sensor(4),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=7,
+                    sensor_info=SensorDB.get_windoor_sensor(5),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=8,
+                    sensor_info=SensorDB.get_windoor_sensor(6),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=9,
+                    sensor_info=SensorDB.get_windoor_sensor(7),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=10,
+                    sensor_info=SensorDB.get_windoor_sensor(8),
+                ),
+                # All cameras from CameraDB (device IDs: 11-13)
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=11,
+                    camera_info=CameraDB.get_camera(1),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=12,
+                    camera_info=CameraDB.get_camera(2),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=13,
+                    camera_info=CameraDB.get_camera(3),
+                ),
             ],
             safety_zones=[],
             safehome_modes={
                 SafeHomeModeType.HOME: SafeHomeMode(SafeHomeModeType.HOME, []),
-                SafeHomeModeType.AWAY: SafeHomeMode(SafeHomeModeType.AWAY, [1, 2, 3]),
+                # AWAY mode: all sensors and cameras (device IDs: 1-13)
+                SafeHomeModeType.AWAY: SafeHomeMode(
+                    SafeHomeModeType.AWAY, list(range(1, 14))
+                ),
+                # OVERNIGHT_TRAVEL mode: all sensors and cameras
                 SafeHomeModeType.OVERNIGHT_TRAVEL: SafeHomeMode(
-                    SafeHomeModeType.OVERNIGHT_TRAVEL, [1, 2, 3]
+                    SafeHomeModeType.OVERNIGHT_TRAVEL, list(range(1, 14))
                 ),
+                # EXTENDED_TRAVEL mode: all sensors and cameras
                 SafeHomeModeType.EXTENDED_TRAVEL: SafeHomeMode(
-                    SafeHomeModeType.EXTENDED_TRAVEL, [1, 2, 3]
+                    SafeHomeModeType.EXTENDED_TRAVEL, list(range(1, 14))
                 ),
+                # GUEST_HOME mode: motion sensors only (device IDs: 1-2)
                 SafeHomeModeType.GUEST_HOME: SafeHomeMode(
                     SafeHomeModeType.GUEST_HOME, [1, 2]
                 ),

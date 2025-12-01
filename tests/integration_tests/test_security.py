@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from control_panel.control_panel import ControlPanel, ControlPanelState
-from frontend.security_panel import SafetyZoneDialog, SecurityPanel
+from frontend.security_panel import ReconfirmDialog, SafetyZoneDialog, SecurityPanel
 
 
 @pytest.fixture
@@ -44,28 +44,35 @@ def test_uc_2b(tk_root):
     mock_app.current_user = "homeowner1"
     security_panel = SecurityPanel(tk_root, mock_app)
 
-    # Away
-    security_panel.mode_var.set("away")
-    with (
-        patch("tkinter.messagebox.askyesno", return_value=True),
-        patch("tkinter.messagebox.showinfo") as mock_showinfo,
-    ):
-        security_panel.arm_system()
+    original_init = ReconfirmDialog.__init__
 
-    mock_showinfo.assert_called_once_with("Success", "System armed successfully")
+    def mock_init(self, parent):
+        original_init(self, parent)
+        self.address_entry.delete(0, tk.END)
+        self.address_entry.insert(0, "123 Main St")
+        self.phone_entry.delete(0, tk.END)
+        self.ok_clicked()
+
+    # Test changing to "away" mode
+    with (
+        patch.object(ReconfirmDialog, "__init__", mock_init),
+        patch.object(security_panel, "wait_window", MagicMock(return_value=None)),
+    ):
+        security_panel.on_mode_change("away")
+
+    assert security_panel.current_mode == "away"
 
     control_panel.poll_alarm()
     assert control_panel.armed is True
 
-    # Stay
-    security_panel.mode_var.set("home")
+    # Test changing to "home" mode
     with (
-        patch("tkinter.messagebox.askyesno", return_value=True),
-        patch("tkinter.messagebox.showinfo") as mock_showinfo,
+        patch.object(ReconfirmDialog, "__init__", mock_init),
+        patch.object(security_panel, "wait_window", MagicMock(return_value=None)),
     ):
-        security_panel.arm_system()
+        security_panel.on_mode_change("home")
 
-    mock_showinfo.assert_called_once_with("Success", "System armed successfully")
+    assert security_panel.current_mode == "home"
 
     control_panel.poll_alarm()
     assert control_panel.armed is False
@@ -258,17 +265,30 @@ def test_uc_2i(tk_root):
     mock_app.current_user = "homeowner1"
     security_panel = SecurityPanel(tk_root, mock_app)
 
+    original_init = ReconfirmDialog.__init__
+
+    def mock_init(self, parent):
+        original_init(self, parent)
+        self.address_entry.delete(0, tk.END)
+        self.address_entry.insert(0, "123 Main St")
+        self.phone_entry.delete(0, tk.END)
+        self.ok_clicked()
+
     # Test changing to "away" mode
-    with patch("tkinter.messagebox.showinfo"):
-        security_panel.mode_var.set("away")
-        tk_root.update()
+    with (
+        patch.object(ReconfirmDialog, "__init__", mock_init),
+        patch.object(security_panel, "wait_window", MagicMock(return_value=None)),
+    ):
+        security_panel.on_mode_change("away")
 
     assert security_panel.current_mode == "away"
 
     # Test changing to "home" mode
-    with patch("tkinter.messagebox.showinfo"):
-        security_panel.mode_var.set("home")
-        tk_root.update()
+    with (
+        patch.object(ReconfirmDialog, "__init__", mock_init),
+        patch.object(security_panel, "wait_window", MagicMock(return_value=None)),
+    ):
+        security_panel.on_mode_change("home")
 
     assert security_panel.current_mode == "home"
 

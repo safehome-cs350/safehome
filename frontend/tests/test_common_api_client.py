@@ -134,15 +134,15 @@ class TestCommonAPIClient:
         """Test config update with error response."""
         mock_response = Mock()
         mock_response.status_code = 400
-        mock_response.json.return_value = {"detail": "Delay time must be at least 300"}
+        mock_response.json.return_value = {"detail": "Delay time must be at least 0"}
         mock_post.return_value = mock_response
 
         client = CommonAPIClient()
         with pytest.raises(requests.HTTPError) as exc_info:
-            client.config("user1", delay_time=200)
+            client.config("user1", delay_time=-1)
 
         assert "400" in str(exc_info.value)
-        assert "Delay time must be at least 300" in str(exc_info.value)
+        assert "Delay time must be at least 0" in str(exc_info.value)
 
     @patch("frontend.common_api_client.requests.post")
     def test_config_error_no_detail(self, mock_post):

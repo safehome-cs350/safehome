@@ -466,9 +466,17 @@ class TestSecurityPanelAdditional:
 
         panel = SecurityPanel(root, app)
         panel.current_mode = "away"
-        panel.mode_var.set("home")
 
-        panel.on_mode_change()
+        # Mock reconfirm dialog to auto-confirm
+        with patch("frontend.security_panel.ReconfirmDialog") as mock_dialog:
+            mock_dialog_instance = Mock()
+            mock_dialog_instance.result = True
+            mock_dialog_instance.address = "123 Main St"
+            mock_dialog_instance.phone_number = None
+            mock_dialog.return_value = mock_dialog_instance
+            mock_api_client.reconfirm.return_value = {"message": "Reconfirmed"}
+            with patch.object(panel, "wait_window"):
+                panel.on_mode_change("home")
 
         mock_messagebox.showerror.assert_called()
         call_args = mock_messagebox.showerror.call_args[0]

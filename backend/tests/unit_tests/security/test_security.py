@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from backend.app import app
+from backend.common.device import CameraDB, SensorDB
 from backend.common.user import Device, DeviceType, User, UserDB
 
 client = TestClient(app)
@@ -25,9 +26,74 @@ def reset_user_db():
             is_powered_on=True,
             address="123 Main St",
             devices=[
-                Device(type=DeviceType.SENSOR, id=1),
-                Device(type=DeviceType.SENSOR, id=2),
-                Device(type=DeviceType.CAMERA, id=3),
+                # All motion sensors from SensorDB (device IDs: 1-2)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=1,
+                    sensor_info=SensorDB.get_motion_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=2,
+                    sensor_info=SensorDB.get_motion_sensor(2),
+                ),
+                # All windoor sensors from SensorDB (device IDs: 3-10)
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=3,
+                    sensor_info=SensorDB.get_windoor_sensor(1),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=4,
+                    sensor_info=SensorDB.get_windoor_sensor(2),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=5,
+                    sensor_info=SensorDB.get_windoor_sensor(3),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=6,
+                    sensor_info=SensorDB.get_windoor_sensor(4),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=7,
+                    sensor_info=SensorDB.get_windoor_sensor(5),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=8,
+                    sensor_info=SensorDB.get_windoor_sensor(6),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=9,
+                    sensor_info=SensorDB.get_windoor_sensor(7),
+                ),
+                Device(
+                    type=DeviceType.SENSOR,
+                    id=10,
+                    sensor_info=SensorDB.get_windoor_sensor(8),
+                ),
+                # All cameras from CameraDB (device IDs: 11-13)
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=11,
+                    camera_info=CameraDB.get_camera(1),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=12,
+                    camera_info=CameraDB.get_camera(2),
+                ),
+                Device(
+                    type=DeviceType.CAMERA,
+                    id=13,
+                    camera_info=CameraDB.get_camera(3),
+                ),
             ],
             safety_zones=[],
         )
@@ -112,19 +178,19 @@ def test_get_safety_zones_success():
     response = client.get("/get-safety-zones/", params={"user_id": "homeowner1"})
     assert response.status_code == 200
     data = response.json()
-    expected = {
-        "safety_zones": [
-            {
-                "name": "Living Room",
-                "devices": [
-                    {"type": "sensor", "id": 1},
-                    {"type": "sensor", "id": 2},
-                ],
-                "is_armed": False,
-            }
-        ]
-    }
-    assert data == expected
+    assert "safety_zones" in data
+    assert len(data["safety_zones"]) == 1
+    zone = data["safety_zones"][0]
+    assert zone["name"] == "Living Room"
+    assert zone["is_armed"] is False
+    assert len(zone["devices"]) == 2
+    # Verify devices have enriched data
+    for device in zone["devices"]:
+        assert "id" in device
+        assert "type" in device
+        assert device["type"] == "sensor"
+        assert "sensor_type" in device
+        assert "location" in device
 
 
 def test_get_safety_zones_invalid_user():
@@ -200,17 +266,16 @@ def test_arm_safety_zone_success():
     response = client.get("/get-safety-zones/?user_id=homeowner1")
     assert response.status_code == 200
     safety_zones = response.json()["safety_zones"]
-    expected_safety_zones = [
-        {
-            "name": "Living Room",
-            "devices": [
-                {"type": "sensor", "id": 1},
-                {"type": "sensor", "id": 2},
-            ],
-            "is_armed": True,
-        }
-    ]
-    assert safety_zones == expected_safety_zones
+    assert len(safety_zones) == 1
+    zone = safety_zones[0]
+    assert zone["name"] == "Living Room"
+    assert zone["is_armed"] is True
+    assert len(zone["devices"]) == 2
+    # Verify devices have enriched data
+    for device in zone["devices"]:
+        assert device["type"] == "sensor"
+        assert "sensor_type" in device
+        assert "location" in device
 
 
 def test_arm_safety_zone_invalid_user():
@@ -243,13 +308,13 @@ def test_arm_safety_zone_not_found():
 
 def test_disarm_safety_zone_success():
     """Test successful disarming of safety zone."""
-    # First create and arm a safety zone
+    # First create and arm a safety zone (using device ID 11 which is a camera)
     response = client.post(
         "/create-safety-zone/",
         json={
             "user_id": "homeowner1",
             "name": "Bedroom",
-            "device_ids": [3],
+            "device_ids": [11],
         },
     )
     assert response.status_code == 200
@@ -280,16 +345,17 @@ def test_disarm_safety_zone_success():
     response = client.get("/get-safety-zones/?user_id=homeowner1")
     assert response.status_code == 200
     safety_zones = response.json()["safety_zones"]
-    expected_safety_zones = [
-        {
-            "name": "Bedroom",
-            "devices": [
-                {"type": "camera", "id": 3},
-            ],
-            "is_armed": False,
-        }
-    ]
-    assert safety_zones == expected_safety_zones
+    assert len(safety_zones) == 1
+    zone = safety_zones[0]
+    assert zone["name"] == "Bedroom"
+    assert zone["is_armed"] is False
+    assert len(zone["devices"]) == 1
+    # Verify device has enriched camera data
+    device = zone["devices"][0]
+    assert device["type"] == "camera"
+    assert device["id"] == 11
+    assert "name" in device
+    assert "location" in device
 
 
 def test_disarm_safety_zone_invalid_user():
@@ -337,17 +403,16 @@ def test_create_safety_zone_success():
     response = client.get("/get-safety-zones/?user_id=homeowner1")
     assert response.status_code == 200
     safety_zones = response.json()["safety_zones"]
-    expected_safety_zones = [
-        {
-            "name": "Living Room",
-            "devices": [
-                {"type": "sensor", "id": 1},
-                {"type": "sensor", "id": 2},
-            ],
-            "is_armed": False,
-        }
-    ]
-    assert safety_zones == expected_safety_zones
+    assert len(safety_zones) == 1
+    zone = safety_zones[0]
+    assert zone["name"] == "Living Room"
+    assert zone["is_armed"] is False
+    assert len(zone["devices"]) == 2
+    # Verify devices have enriched data
+    for device in zone["devices"]:
+        assert device["type"] == "sensor"
+        assert "sensor_type" in device
+        assert "location" in device
 
 
 def test_create_safety_zone_invalid_user():
@@ -505,13 +570,13 @@ def test_update_safety_zone_success():
     )
     assert response.status_code == 200
 
-    # Now update the devices
+    # Now update the devices (using device ID 11 which is a camera)
     response = client.post(
         "/update-safety-zone/",
         json={
             "user_id": "homeowner1",
             "name": "Test Zone",
-            "device_ids": [1, 3],
+            "device_ids": [1, 11],
         },
     )
     assert response.status_code == 200
@@ -521,17 +586,22 @@ def test_update_safety_zone_success():
     response = client.get("/get-safety-zones/?user_id=homeowner1")
     assert response.status_code == 200
     safety_zones = response.json()["safety_zones"]
-    expected_safety_zones = [
-        {
-            "name": "Test Zone",
-            "devices": [
-                {"type": "sensor", "id": 1},
-                {"type": "camera", "id": 3},
-            ],
-            "is_armed": False,
-        }
-    ]
-    assert safety_zones == expected_safety_zones
+    assert len(safety_zones) == 1
+    zone = safety_zones[0]
+    assert zone["name"] == "Test Zone"
+    assert zone["is_armed"] is False
+    assert len(zone["devices"]) == 2
+    # Verify devices have enriched data
+    device_ids = [d["id"] for d in zone["devices"]]
+    assert 1 in device_ids
+    assert 11 in device_ids
+    for device in zone["devices"]:
+        if device["id"] == 1:
+            assert device["type"] == "sensor"
+            assert "sensor_type" in device
+        elif device["id"] == 11:
+            assert device["type"] == "camera"
+            assert "name" in device
 
 
 def test_update_safety_zone_invalid_user():
@@ -957,8 +1027,10 @@ def test_set_safehome_mode_multiple_devices(test_user):
     result = set_safehome_mode(req)
     assert result["current_mode"] == "away"
     assert set(result["armed_devices"]) == {1, 2, 3}
+    # Only check that the devices with IDs [1, 2, 3] are armed
     for device in test_user.devices:
-        assert device.is_armed is True
+        if device.id in [1, 2, 3]:
+            assert device.is_armed is True
     assert test_user.is_system_armed is True
 
 
@@ -980,4 +1052,5 @@ def test_configure_safety_zone_interface_multiple_zones_devices(test_user):
     assert len(result["existing_safety_zones"]) == 2
     assert set([z["name"] for z in result["existing_safety_zones"]]) == {"거실", "침실"}
     assert "available_devices" in result
-    assert len(result["available_devices"]) == 3
+    # Now there are 13 devices total (10 sensors + 3 cameras)
+    assert len(result["available_devices"]) == 13
